@@ -178,9 +178,18 @@ class AdminPanel {
     async checkAuthStatus() {
         const isAuthenticated = sessionStorage.getItem('adminAuth') === 'true';
         
+        console.log('=== ADMIN AUTH DEBUG ===');
+        console.log('Session authenticated:', isAuthenticated);
+        console.log('Config loaded:', window.dataManager.config);
+        console.log('AdminPassword value:', JSON.stringify(window.dataManager.config.adminPassword));
+        console.log('AdminPassword length:', window.dataManager.config.adminPassword ? window.dataManager.config.adminPassword.length : 'undefined');
+        console.log('SetupRequired:', window.dataManager.config.setupRequired);
+        
         if (isAuthenticated) {
+            console.log('User is authenticated, showing admin panel');
             this.showAdminPanel();
         } else {
+            console.log('User not authenticated, checking password setup');
             // Check if password is configured
             await this.checkPasswordSetup();
         }
