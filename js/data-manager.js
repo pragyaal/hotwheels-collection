@@ -10,9 +10,12 @@ class DataManager {
 
     async init() {
         // Check if Git storage is configured
-        if (window.gitStorage && window.gitStorage.loadConfig()) {
-            this.useGitStorage = true;
-            console.log('Using Git storage for data persistence');
+        if (window.gitStorage) {
+            const gitConfigured = window.gitStorage.loadConfig();
+            if (gitConfigured) {
+                this.useGitStorage = true;
+                console.log('Using Git storage for data persistence');
+            }
         }
         
         await this.loadConfig();
@@ -81,52 +84,47 @@ class DataManager {
     // Car data management
     async loadCars() {
         try {
-            // Try Git storage first
+            // Try Git storage first if configured
             if (this.useGitStorage) {
                 try {
                     const gitCars = await window.gitStorage.loadCars();
-                    if (gitCars.length > 0) {
-                        this.cars = gitCars;
-                        console.log('Loaded cars from Git storage:', this.cars.length);
-                        return;
-                    }
+                    this.cars = gitCars || [];
+                    console.log('Loaded cars from Git storage:', this.cars.length);
+                    return;
                 } catch (error) {
                     console.log('Failed to load cars from Git, falling back to local');
                 }
             }
 
-            // Fallback to local storage and files
-            let fileData = [];
-            try {
-                const response = await fetch('data/cars.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    fileData = data.cars || [];
-                }
-            } catch (error) {
-                console.log('No cars.json file found');
-            }
-
-            // Then check localStorage for newer data
+            // Fallback to localStorage only if Git storage is not configured
             const localData = localStorage.getItem('hotwheels_cars');
             if (localData) {
                 try {
                     const parsedLocal = JSON.parse(localData);
                     const localCars = parsedLocal.cars || [];
-                    
-                    // Use localStorage data if it exists and has more cars or newer timestamp
-                    if (localCars.length > 0) {
-                        this.cars = localCars;
-                        console.log('Loaded cars from localStorage:', this.cars.length);
-                        return;
-                    }
+                    this.cars = localCars;
+                    console.log('Loaded cars from localStorage:', this.cars.length);
+                    return;
                 } catch (error) {
                     console.log('Error parsing localStorage data');
                 }
             }
 
-            // Fallback to file data or empty array
-            this.cars = fileData;
+            // Final fallback to local file
+            try {
+                const response = await fetch('data/cars.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.cars = data.cars || [];
+                    console.log('Loaded cars from local file:', this.cars.length);
+                    return;
+                }
+            } catch (error) {
+                console.log('No cars.json file found');
+            }
+
+            // If all else fails, start with empty array
+            this.cars = [];
         } catch (error) {
             console.log('Error loading cars data');
             this.cars = [];
@@ -135,52 +133,47 @@ class DataManager {
 
     async loadWishlist() {
         try {
-            // Try Git storage first
+            // Try Git storage first if configured
             if (this.useGitStorage) {
                 try {
                     const gitWishlist = await window.gitStorage.loadWishlist();
-                    if (gitWishlist.length > 0) {
-                        this.wishlist = gitWishlist;
-                        console.log('Loaded wishlist from Git storage:', this.wishlist.length);
-                        return;
-                    }
+                    this.wishlist = gitWishlist || [];
+                    console.log('Loaded wishlist from Git storage:', this.wishlist.length);
+                    return;
                 } catch (error) {
                     console.log('Failed to load wishlist from Git, falling back to local');
                 }
             }
 
-            // Fallback to local storage and files
-            let fileData = [];
-            try {
-                const response = await fetch('data/wishlist.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    fileData = data.wishlist || [];
-                }
-            } catch (error) {
-                console.log('No wishlist.json file found');
-            }
-
-            // Then check localStorage for newer data
+            // Fallback to localStorage only if Git storage is not configured
             const localData = localStorage.getItem('hotwheels_wishlist');
             if (localData) {
                 try {
                     const parsedLocal = JSON.parse(localData);
                     const localWishlist = parsedLocal.wishlist || [];
-                    
-                    // Use localStorage data if it exists
-                    if (localWishlist.length > 0) {
-                        this.wishlist = localWishlist;
-                        console.log('Loaded wishlist from localStorage:', this.wishlist.length);
-                        return;
-                    }
+                    this.wishlist = localWishlist;
+                    console.log('Loaded wishlist from localStorage:', this.wishlist.length);
+                    return;
                 } catch (error) {
                     console.log('Error parsing localStorage wishlist data');
                 }
             }
 
-            // Fallback to file data or empty array
-            this.wishlist = fileData;
+            // Final fallback to local file
+            try {
+                const response = await fetch('data/wishlist.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.wishlist = data.wishlist || [];
+                    console.log('Loaded wishlist from local file:', this.wishlist.length);
+                    return;
+                }
+            } catch (error) {
+                console.log('No wishlist.json file found');
+            }
+
+            // If all else fails, start with empty array
+            this.wishlist = [];
         } catch (error) {
             console.log('Error loading wishlist data');
             this.wishlist = [];
@@ -221,12 +214,22 @@ class DataManager {
     }
 
     // Delete car
-    deleteCar(id) {
+    async deleteCar(id) {
         const index = this.cars.findIndex(car => car.id === parseInt(id));
         if (index !== -1) {
+            const deletedCar = this.cars[index];
             this.cars.splice(index, 1);
-            this.saveCars();
-            return true;
+            
+            try {
+                await this.saveCars();
+                console.log(`Car "${deletedCar.name}" deleted successfully`);
+                return true;
+            } catch (error) {
+                // Restore the car if save failed
+                this.cars.splice(index, 0, deletedCar);
+                console.error('Failed to save after deleting car:', error);
+                throw error;
+            }
         }
         return false;
     }
@@ -247,12 +250,22 @@ class DataManager {
         return newItem;
     }
 
-    removeFromWishlist(id) {
+    async removeFromWishlist(id) {
         const index = this.wishlist.findIndex(item => item.id === parseInt(id));
         if (index !== -1) {
+            const deletedItem = this.wishlist[index];
             this.wishlist.splice(index, 1);
-            this.saveWishlist();
-            return true;
+            
+            try {
+                await this.saveWishlist();
+                console.log(`Wishlist item "${deletedItem.name}" deleted successfully`);
+                return true;
+            } catch (error) {
+                // Restore the item if save failed
+                this.wishlist.splice(index, 0, deletedItem);
+                console.error('Failed to save after deleting wishlist item:', error);
+                throw error;
+            }
         }
         return false;
     }
@@ -404,76 +417,78 @@ class DataManager {
 
     // Data persistence
     async saveCars() {
+        // If Git storage is configured, save there only
+        if (this.useGitStorage) {
+            try {
+                const success = await window.gitStorage.saveCars(this.cars);
+                if (success) {
+                    console.log('Cars saved to Git repository');
+                    return;
+                } else {
+                    throw new Error('Git save failed');
+                }
+            } catch (error) {
+                console.error('Failed to save cars to Git storage:', error);
+                throw error; // Don't fall back, show error
+            }
+        }
+        
+        // Only use localStorage if Git storage is not configured
         const data = {
             cars: this.cars,
             lastUpdated: new Date().toISOString()
         };
         
-        // Try Git storage first
-        if (this.useGitStorage) {
-            try {
-                const success = await window.gitStorage.saveCars(this.cars);
-                if (success) {
-                    console.log('Cars saved to Git storage');
-                    // Also save to localStorage as backup
-                    localStorage.setItem('hotwheels_cars', JSON.stringify(data));
-                    return;
-                }
-            } catch (error) {
-                console.error('Failed to save cars to Git storage:', error);
-            }
-        }
-        
-        // Fallback to localStorage
         localStorage.setItem('hotwheels_cars', JSON.stringify(data));
-        
-        // Create downloadable JSON file for permanent storage
         this.createDownloadableFile('cars.json', data);
-        
         console.log('Cars saved to localStorage and download created');
     }
 
     async saveWishlist() {
+        // If Git storage is configured, save there only
+        if (this.useGitStorage) {
+            try {
+                const success = await window.gitStorage.saveWishlist(this.wishlist);
+                if (success) {
+                    console.log('Wishlist saved to Git repository');
+                    return;
+                } else {
+                    throw new Error('Git save failed');
+                }
+            } catch (error) {
+                console.error('Failed to save wishlist to Git storage:', error);
+                throw error; // Don't fall back, show error
+            }
+        }
+        
+        // Only use localStorage if Git storage is not configured
         const data = {
             wishlist: this.wishlist,
             lastUpdated: new Date().toISOString()
         };
         
-        // Try Git storage first
-        if (this.useGitStorage) {
-            try {
-                const success = await window.gitStorage.saveWishlist(this.wishlist);
-                if (success) {
-                    console.log('Wishlist saved to Git storage');
-                    localStorage.setItem('hotwheels_wishlist', JSON.stringify(data));
-                    return;
-                }
-            } catch (error) {
-                console.error('Failed to save wishlist to Git storage:', error);
-            }
-        }
-        
-        // Fallback to localStorage
         localStorage.setItem('hotwheels_wishlist', JSON.stringify(data));
         this.createDownloadableFile('wishlist.json', data);
     }
 
     async saveConfig() {
-        // Try Git storage first
+        // If Git storage is configured, save there only
         if (this.useGitStorage) {
             try {
                 const success = await window.gitStorage.saveConfig(this.config);
                 if (success) {
-                    console.log('Config saved to Git storage');
-                    localStorage.setItem('hotwheels_config', JSON.stringify(this.config));
+                    console.log('Config saved to Git repository');
                     return;
+                } else {
+                    throw new Error('Git save failed');
                 }
             } catch (error) {
                 console.error('Failed to save config to Git storage:', error);
+                throw error; // Don't fall back, show error
             }
         }
         
-        // Fallback to localStorage
+        // Only use localStorage if Git storage is not configured
         localStorage.setItem('hotwheels_config', JSON.stringify(this.config));
         this.createDownloadableFile('config.json', this.config);
     }
@@ -533,6 +548,20 @@ class DataManager {
         a.download = `hotwheels-collection-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    // Check if Git storage is active
+    isGitStorageActive() {
+        return this.useGitStorage;
+    }
+
+    // Get storage status message
+    getStorageStatusMessage() {
+        if (this.useGitStorage) {
+            return "Cars are permanently saved to your private GitHub repository. All data persists across devices and sessions.";
+        } else {
+            return "Cars are saved to your browser's local storage and will persist while using this site. For permanent backup, download the generated data files from the Settings tab.";
+        }
     }
 }
 

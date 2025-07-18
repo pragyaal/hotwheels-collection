@@ -194,6 +194,25 @@
     font-size: 1rem;
 }
 
+/* Bulk Actions */
+.search-section {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.search-section input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
 /* Manage Lists */
 .manage-list {
     display: grid;
@@ -246,6 +265,28 @@
 .btn-small {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
+}
+
+/* Manage Item with Checkbox */
+.manage-item {
+    display: flex;
+    align-items: center;
+}
+
+.manage-item-checkbox {
+    margin-right: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.car-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.car-checkbox:checked {
+    accent-color: #667eea;
 }
 
 /* Backup Section */
@@ -512,6 +553,33 @@
 .btn-success:hover {
     background: #218838;
     border-color: #1e7e34;
+}
+
+/* Button styling for bulk actions */
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+}
+
+.btn-small i {
+    margin-right: 0.3rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Warning message style */
+.message-toast.warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
 }
 
 /* Responsive Design */

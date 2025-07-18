@@ -120,7 +120,12 @@ class GitStorageManager {
     async loadCars() {
         try {
             const result = await this.getFile('data/cars.json');
-            return result.content ? result.content.cars || [] : [];
+            if (result.content && result.content.cars) {
+                return result.content.cars;
+            } else if (result.content && Array.isArray(result.content)) {
+                return result.content;
+            }
+            return [];
         } catch (error) {
             console.error('Failed to load cars from Git:', error);
             return [];
@@ -154,7 +159,12 @@ class GitStorageManager {
     async loadWishlist() {
         try {
             const result = await this.getFile('data/wishlist.json');
-            return result.content ? result.content.wishlist || [] : [];
+            if (result.content && result.content.wishlist) {
+                return result.content.wishlist;
+            } else if (result.content && Array.isArray(result.content)) {
+                return result.content;
+            }
+            return [];
         } catch (error) {
             console.error('Failed to load wishlist from Git:', error);
             return [];

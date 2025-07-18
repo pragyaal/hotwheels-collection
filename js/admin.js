@@ -14,6 +14,26 @@ class AdminPanel {
 
         this.setupEventListeners();
         this.checkAuthStatus();
+        this.updateStorageStatusDisplay();
+    }
+
+    updateStorageStatusDisplay() {
+        const statusElement = document.getElementById('storageStatusText');
+        if (statusElement && window.dataManager) {
+            statusElement.textContent = window.dataManager.getStorageStatusMessage();
+            
+            // Update icon based on storage type
+            const panel = document.getElementById('storageInfoPanel');
+            if (panel) {
+                if (window.dataManager.isGitStorageActive()) {
+                    panel.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    panel.querySelector('i').className = 'fas fa-cloud-check';
+                } else {
+                    panel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    panel.querySelector('i').className = 'fas fa-info-circle';
+                }
+            }
+        }
     }
 
     setupEventListeners() {
@@ -274,11 +294,18 @@ class AdminPanel {
         try {
             if (this.editingCarId) {
                 window.dataManager.updateCar(this.editingCarId, formData);
-                this.showMessage('Car updated successfully! Data saved to browser storage.', 'success');
+                this.showMessage('Car updated successfully! Data saved permanently.', 'success');
                 this.editingCarId = null;
             } else {
-                window.dataManager.addCar(formData);
-                this.showMessage('Car added successfully! Data saved to browser storage.', 'success');
+                const newCar = window.dataManager.addCar(formData);
+                console.log('Car added:', newCar);
+                
+                // Check storage type and show appropriate message
+                if (window.dataManager.isGitStorageActive()) {
+                    this.showMessage('Car added successfully! Data saved to Git repository.', 'success');
+                } else {
+                    this.showMessage('Car added successfully! Data saved to browser storage.', 'success');
+                }
             }
             
             this.resetCarForm();
@@ -290,6 +317,7 @@ class AdminPanel {
             }));
             
         } catch (error) {
+            console.error('Error saving car:', error);
             this.showMessage('Error saving car: ' + error.message, 'error');
         }
     }
@@ -363,6 +391,9 @@ class AdminPanel {
 
         container.innerHTML = cars.map(car => `
             <div class="manage-item" data-car-id="${car.id}">
+                <div class="manage-item-checkbox">
+                    <input type="checkbox" class="car-checkbox" value="${car.id}" onchange="adminPanel.updateBulkActions()">
+                </div>
                 <img src="${car.image}" alt="${car.name}" class="manage-item-image" 
                      onerror="this.src='images/placeholder-car.svg'">
                 <div class="manage-item-info">
@@ -431,15 +462,128 @@ class AdminPanel {
         this.editingCarId = carId;
     }
 
-    deleteCar(carId) {
+    async deleteCar(carId) {
         const car = window.dataManager.getCarById(carId);
         if (!car) return;
 
-        if (confirm(`Are you sure you want to delete "${car.name}"? This action cannot be undone.`)) {
-            window.dataManager.deleteCar(carId);
-            this.showMessage('Car deleted successfully!', 'success');
-            this.loadManageCars();
+        const confirmMessage = `Are you sure you want to delete this car?
+        
+Name: ${car.name}
+Brand: ${car.brand}
+Series: ${car.series || 'N/A'}
+Price: ${window.dataManager.formatCurrency(car.purchasePrice)}
+
+This action cannot be undone.`;
+
+        if (confirm(confirmMessage)) {
+            try {
+                const success = await window.dataManager.deleteCar(carId);
+                if (success) {
+                    this.showMessage(`"${car.name}" deleted successfully! Data saved to repository.`, 'success');
+                    this.loadManageCars();
+                    
+                    // Trigger a custom event to notify other pages that data has changed
+                    window.dispatchEvent(new CustomEvent('dataUpdated', { 
+                        detail: { type: 'cars', action: 'delete', carId } 
+                    }));
+                } else {
+                    this.showMessage('Failed to delete car. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting car:', error);
+                this.showMessage('Error deleting car: ' + error.message, 'error');
+            }
         }
+    }
+
+    // Bulk delete functionality
+    updateBulkActions() {
+        const checkboxes = document.querySelectorAll('.car-checkbox');
+        const checkedBoxes = document.querySelectorAll('.car-checkbox:checked');
+        const deleteButton = document.getElementById('deleteSelectedCars');
+        const selectAllButton = document.getElementById('selectAllCars');
+        
+        // Enable/disable delete button
+        deleteButton.disabled = checkedBoxes.length === 0;
+        
+        // Update select all button text
+        if (checkedBoxes.length === 0) {
+            selectAllButton.innerHTML = '<i class="fas fa-check-square"></i> Select All';
+        } else if (checkedBoxes.length === checkboxes.length) {
+            selectAllButton.innerHTML = '<i class="fas fa-square"></i> Deselect All';
+        } else {
+            selectAllButton.innerHTML = '<i class="fas fa-minus-square"></i> Select All';
+        }
+        
+        // Update delete button text with count
+        deleteButton.innerHTML = `<i class="fas fa-trash"></i> Delete Selected (${checkedBoxes.length})`;
+    }
+
+    toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.car-checkbox');
+        const checkedBoxes = document.querySelectorAll('.car-checkbox:checked');
+        const selectAll = checkedBoxes.length !== checkboxes.length;
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll;
+        });
+        
+        this.updateBulkActions();
+    }
+
+    async deleteSelectedCars() {
+        const checkedBoxes = document.querySelectorAll('.car-checkbox:checked');
+        const carIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+        
+        if (carIds.length === 0) {
+            this.showMessage('No cars selected for deletion.', 'error');
+            return;
+        }
+        
+        const confirmMessage = `Are you sure you want to delete ${carIds.length} car(s)? This action cannot be undone.`;
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        let deletedCount = 0;
+        let errors = [];
+        
+        // Show progress
+        this.showMessage(`Deleting ${carIds.length} cars...`, 'info');
+        
+        for (const carId of carIds) {
+            try {
+                const car = window.dataManager.getCarById(carId);
+                const success = await window.dataManager.deleteCar(carId);
+                if (success) {
+                    deletedCount++;
+                    console.log(`Deleted car: ${car?.name}`);
+                } else {
+                    errors.push(`Failed to delete car ID: ${carId}`);
+                }
+            } catch (error) {
+                const car = window.dataManager.getCarById(carId);
+                errors.push(`Error deleting ${car?.name || carId}: ${error.message}`);
+                console.error('Error deleting car:', error);
+            }
+        }
+        
+        // Refresh the display
+        this.loadManageCars();
+        
+        // Show results
+        if (deletedCount === carIds.length) {
+            this.showMessage(`Successfully deleted ${deletedCount} car(s)!`, 'success');
+        } else if (deletedCount > 0) {
+            this.showMessage(`Deleted ${deletedCount} of ${carIds.length} cars. Some deletions failed.`, 'warning');
+        } else {
+            this.showMessage(`Failed to delete cars: ${errors.join(', ')}`, 'error');
+        }
+        
+        // Trigger update event
+        window.dispatchEvent(new CustomEvent('dataUpdated', { 
+            detail: { type: 'cars', action: 'bulkDelete', deletedCount } 
+        }));
     }
 
     handleAddWishlist() {
@@ -636,6 +780,12 @@ class AdminPanel {
                 
                 // Show current status
                 this.updateGitStorageStatus('Connected', 'success');
+                
+                // Update storage status display
+                this.updateStorageStatusDisplay();
+                
+                // Clear the form for security
+                document.getElementById('gitAccessToken').value = '';
             }
         });
     }
