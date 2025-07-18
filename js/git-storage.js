@@ -95,6 +95,12 @@ class GitStorageManager {
     // GitHub API helper
     async githubAPI(endpoint, method = 'GET', data = null) {
         if (!this.isConfigured) {
+            console.error('Git storage not configured. Config state:', {
+                isConfigured: this.isConfigured,
+                hasToken: !!this.accessToken,
+                hasOwner: !!this.repoOwner,
+                hasName: !!this.repoName
+            });
             throw new Error('Git storage not configured');
         }
 

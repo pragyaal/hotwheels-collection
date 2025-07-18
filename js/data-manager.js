@@ -425,8 +425,10 @@ class DataManager {
     // Data persistence
     async saveCars() {
         console.log('saveCars called, useGitStorage:', this.useGitStorage);
-        // If Git storage is configured, save there primarily
-        if (this.useGitStorage) {
+        console.log('Git storage configured:', window.gitStorage?.isConfigured);
+        
+        // Check if Git storage is properly configured
+        if (this.useGitStorage && window.gitStorage?.isConfigured) {
             try {
                 console.log('Attempting to save cars to Git repository...');
                 await window.gitStorage.saveCars(this.cars);
@@ -445,7 +447,7 @@ class DataManager {
             }
         }
         
-        // Only use localStorage if Git storage is not configured
+        // Use localStorage if Git storage is not configured
         console.log('Saving cars to localStorage (Git storage not configured)');
         const data = {
             cars: this.cars,

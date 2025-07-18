@@ -781,14 +781,18 @@ This action cannot be undone.`;
             // Test connection and setup
             this.testGitConnection().then(success => {
                 if (success) {
-                    // Force data manager to use Git storage
+                    // Force data manager to use Git storage immediately
                     window.dataManager.useGitStorage = true;
+                    
+                    // Also re-initialize data manager to pick up Git storage
+                    window.dataManager.init();
+                    
                     console.log('Data manager updated to use Git storage:', window.dataManager.useGitStorage);
                     
                     this.showMessage('Git storage configured successfully! Data will now be saved to your repository.', 'success');
                     
                     // Show current status
-                    this.updateGitStorageStatus('Connected', 'success');
+                    this.updateGitStorageStatus('Connected and Ready', 'success');
                     
                     // Update storage status display
                     this.updateStorageStatusDisplay();
