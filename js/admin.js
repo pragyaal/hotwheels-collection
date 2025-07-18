@@ -175,14 +175,88 @@ class AdminPanel {
         }
     }
 
-    checkAuthStatus() {
+    async checkAuthStatus() {
         const isAuthenticated = sessionStorage.getItem('adminAuth') === 'true';
         
         if (isAuthenticated) {
             this.showAdminPanel();
         } else {
-            this.showLoginForm();
+            // Check if password is configured
+            await this.checkPasswordSetup();
         }
+    }
+
+    async checkPasswordSetup() {
+        // Check local config first
+        const hasLocalPassword = window.dataManager.config.adminPassword;
+        let hasFirebasePassword = false;
+
+        // Check Firebase if available
+        if (window.firebaseManager && window.firebaseManager.isConfigured() && window.firebaseManager.isAuthenticated()) {
+            try {
+                const settings = await window.firebaseManager.getUserSettings();
+                hasFirebasePassword = !!settings.adminPassword;
+            } catch (error) {
+                console.log('Could not check Firebase password:', error);
+            }
+        }
+
+        if (hasLocalPassword || hasFirebasePassword) {
+            // Password is configured, show normal login
+            this.showLoginForm();
+        } else {
+            // No password configured, show setup instructions
+            this.showSetupInstructions();
+        }
+    }
+
+    showSetupInstructions() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('adminPanel').style.display = 'none';
+        
+        // Hide the password input and login button, show setup message
+        const loginForm = document.querySelector('#loginSection form');
+        const errorDiv = document.getElementById('loginError');
+        
+        if (loginForm) {
+            loginForm.style.display = 'none';
+        }
+        
+        errorDiv.innerHTML = `
+            <div style="text-align: left; background: #e3f2fd; border: 1px solid #2196f3; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #1976d2; margin-top: 0;"><i class="fas fa-rocket"></i> Welcome to Hot Wheels Collection!</h3>
+                <p><strong>Setup Required:</strong> No admin password is configured yet.</p>
+                
+                <div style="margin: 15px 0;">
+                    <h4 style="color: #1976d2;"><i class="fas fa-list-ol"></i> Setup Steps:</h4>
+                    <ol style="margin-left: 20px;">
+                        <li><strong>Configure Firebase:</strong> Set up your Firebase project following the <a href="FIREBASE_SETUP_GUIDE.md" target="_blank" style="color: #1976d2;">Firebase Setup Guide</a></li>
+                        <li><strong>Set Admin Password:</strong> Use the admin panel to configure your secure password</li>
+                        <li><strong>Start Managing:</strong> Begin adding your Hot Wheels collection!</li>
+                    </ol>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn btn-primary" onclick="adminPanel.proceedToSetup()" style="margin-right: 10px;">
+                        <i class="fas fa-cog"></i> Proceed to Setup
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="adminPanel.showLoginForm()">
+                        <i class="fas fa-key"></i> I Already Have a Password
+                    </button>
+                </div>
+            </div>
+        `;
+        errorDiv.style.display = 'block';
+    }
+
+    proceedToSetup() {
+        // Bypass authentication for initial setup
+        sessionStorage.setItem('adminAuth', 'true');
+        sessionStorage.setItem('setupMode', 'true');
+        this.showAdminPanel();
+        
+        // Show a setup message in the admin panel
+        this.showMessage('Welcome! Please configure Firebase and set up your admin password using the sections below.', 'info');
     }
 
     async handleLogin() {
@@ -283,6 +357,20 @@ class AdminPanel {
         document.getElementById('loginSection').style.display = 'block';
         document.getElementById('adminPanel').style.display = 'none';
         
+        // Show the login form and clear any setup messages
+        const loginForm = document.querySelector('#loginSection form');
+        const errorDiv = document.getElementById('loginError');
+        
+        if (loginForm) {
+            loginForm.style.display = 'block';
+        }
+        
+        // Clear any previous error messages
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+            errorDiv.innerHTML = '';
+        }
+        
         // Check if this is first-time setup
         const loginDescription = document.getElementById('loginDescription');
         if (window.dataManager.config.setupRequired && !window.dataManager.config.adminPassword) {
@@ -296,11 +384,26 @@ class AdminPanel {
                 loginDescription.style.color = '';
             }
         }
+        
+        // Focus on password input
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) {
+            passwordInput.focus();
+        }
     }
 
     showAdminPanel() {
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
+        
+        // Check if this is setup mode
+        const isSetupMode = sessionStorage.getItem('setupMode') === 'true';
+        if (isSetupMode) {
+            // Switch to settings tab for setup
+            this.switchTab('settings');
+            sessionStorage.removeItem('setupMode');
+        }
+        
         this.loadSettings();
         this.loadManageCars();
         this.loadWishlistItems();
