@@ -379,17 +379,13 @@ class CollectionView {
     }
 
     getImageUrl(imagePath) {
-        console.log('🖼️ getImageUrl called with:', imagePath);
-        
         // If no image path provided, return placeholder
         if (!imagePath) {
-            console.log('🖼️ No image path, using placeholder');
             return 'images/placeholder-car.svg';
         }
         
         // If it's already a full URL, return as is
         if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-            console.log('🖼️ Already full URL:', imagePath);
             return imagePath;
         }
         
@@ -397,28 +393,22 @@ class CollectionView {
         const gitStorageActive = window.dataManager && window.dataManager.isGitStorageActive();
         const gitConfigured = window.gitStorage && window.gitStorage.isConfigured;
         
-        console.log('🖼️ Git storage active:', gitStorageActive, 'Git configured:', gitConfigured);
-        console.log('🖼️ Git storage object:', window.gitStorage);
-        
         // If using Git storage and the image is in the repository, construct GitHub raw URL
         if (gitStorageActive && gitConfigured && imagePath.startsWith('images/cars/')) {
             try {
                 const repoOwner = window.gitStorage.repoOwner;
                 const repoName = window.gitStorage.repoName;
-                console.log('🖼️ Git repo info - Owner:', repoOwner, 'Name:', repoName);
                 if (repoOwner && repoName) {
                     const gitUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
-                    console.log('🖼️ Constructed GitHub URL:', gitUrl);
                     return gitUrl;
                 }
             } catch (error) {
-                console.error('🖼️ Error accessing Git config:', error);
+                console.error('Error accessing Git config:', error);
             }
         }
         
         // For local images, ensure proper relative path
         const localPath = imagePath.startsWith('./') ? imagePath : `./${imagePath}`;
-        console.log('🖼️ Using local path:', localPath);
         return localPath;
     }
 

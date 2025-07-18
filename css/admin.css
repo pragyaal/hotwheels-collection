@@ -167,6 +167,19 @@
     min-height: 80px;
 }
 
+.form-note {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.form-note i {
+    margin-right: 0.25rem;
+    color: #667eea;
+}
+
 /* Image Preview */
 .image-preview {
     margin-top: 1rem;
