@@ -77,7 +77,7 @@ website/
 3. Enable GitHub Pages in repository settings
 
 ### 2. **Admin Access**
-- **Default Password**: `hotwheels123`
+- **Default Password**: ``
 - **Admin URL**: `yoursite.com/admin.html`
 - **Change Password**: Go to Admin → Settings → Change Password
 
