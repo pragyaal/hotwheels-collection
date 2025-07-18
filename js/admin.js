@@ -858,19 +858,57 @@ This action cannot be undone.`;
         try {
             this.updateGitStorageStatus('Testing Git operations...', 'info');
             
-            if (!window.gitStorage.isConfigured) {
-                this.updateGitStorageStatus('Git storage not configured. Please set up first.', 'error');
+            if (!window.gitStorage || !window.gitStorage.isConfigured) {
+                this.updateGitStorageStatus('❌ Git storage not configured. Please fill in all fields and click "Setup Git Storage" first.', 'error');
                 return;
             }
             
-            const success = await window.gitStorage.testGitStorageOperations();
-            if (success) {
-                this.updateGitStorageStatus('Git operations test passed! Check your repository.', 'success');
+            console.log('Starting Git operations test...');
+            await window.gitStorage.testGitStorageOperations();
+            
+            this.updateGitStorageStatus('✅ Git operations test passed! Your repository is working correctly. Check your repo for test files.', 'success');
+            console.log('Git operations test completed successfully');
+            
+        } catch (error) {
+            console.error('Git operations test failed:', error);
+            
+            let errorMessage = '❌ Git operations test failed: ';
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
+                errorMessage += 'Repository not found. Make sure the repository exists and your token has access.';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                errorMessage += 'Invalid access token. Check that your token is correct and has "repo" permissions.';
+            } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                errorMessage += 'Access forbidden. Your token may not have the required permissions for this repository.';
             } else {
-                this.updateGitStorageStatus('Git operations test failed. Check console for details.', 'error');
+                errorMessage += error.message;
+            }
+            
+            this.updateGitStorageStatus(errorMessage, 'error');
+        }
+    }
+
+    async testImageUpload() {
+        try {
+            this.updateGitStorageStatus('Testing image upload...', 'info');
+            
+            if (!window.gitStorage || !window.gitStorage.isConfigured) {
+                this.updateGitStorageStatus('❌ Git storage not configured. Please set up Git storage first.', 'error');
+                return;
+            }
+            
+            console.log('Starting image upload test...');
+            const result = await window.gitStorage.testImageUpload();
+            
+            if (result.success) {
+                this.updateGitStorageStatus(`✅ Image upload test successful! Test image uploaded to: ${result.path}`, 'success');
+                console.log('Image upload test successful:', result);
+            } else {
+                this.updateGitStorageStatus(`❌ Image upload test failed: ${result.error}`, 'error');
+                console.error('Image upload test failed:', result);
             }
         } catch (error) {
-            this.updateGitStorageStatus(`Git operations test error: ${error.message}`, 'error');
+            console.error('Image upload test error:', error);
+            this.updateGitStorageStatus(`❌ Image upload test error: ${error.message}`, 'error');
         }
     }
 

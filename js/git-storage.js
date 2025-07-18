@@ -170,6 +170,22 @@ class GitStorageManager {
         }
     }
 
+    // Get binary file (like images) from repository
+    async getBinaryFile(path) {
+        try {
+            const result = await this.githubAPI(`contents/${path}`);
+            return {
+                content: result.content, // Keep as base64
+                sha: result.sha
+            };
+        } catch (error) {
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
+                return { content: null, sha: null };
+            }
+            throw error;
+        }
+    }
+
     // Save file to repository
     async saveFile(path, content, message, sha = null) {
         const data = {
@@ -369,6 +385,8 @@ class GitStorageManager {
     // Upload image file to repository
     async uploadImage(file, fileName) {
         try {
+            console.log(`Starting image upload: ${fileName}`);
+            
             // Ensure images directory exists
             await this.ensureImagesDirectory();
             
@@ -377,23 +395,23 @@ class GitStorageManager {
             const content = base64Content.split(',')[1]; // Remove data:image/jpeg;base64, prefix
             
             const path = `images/cars/${fileName}`;
+            console.log(`Uploading to path: ${path}`);
             
-            // Check if file already exists
-            const existing = await this.getFile(path);
+            // Check if file already exists (use binary file method for images)
+            const existing = await this.getBinaryFile(path);
             
             const data = {
                 message: `Upload image: ${fileName}`,
-                content: content,
-                sha: existing.sha // Include sha if updating existing file
+                content: content
             };
             
-            // Remove sha if file doesn't exist
-            if (!existing.sha) {
-                delete data.sha;
+            // Include sha if updating existing file
+            if (existing.sha) {
+                data.sha = existing.sha;
             }
             
-            await this.githubAPI(`contents/${path}`, 'PUT', data);
-            console.log(`Image uploaded successfully: ${path}`);
+            const result = await this.githubAPI(`contents/${path}`, 'PUT', data);
+            console.log(`Image uploaded successfully: ${path}`, result);
             return path;
         } catch (error) {
             console.error('Failed to upload image:', error);
@@ -468,9 +486,17 @@ Images are automatically named with the pattern:
     async testGitStorageOperations() {
         console.log('Testing Git storage operations...');
         try {
-            // Test directory creation
+            if (!this.isConfigured) {
+                throw new Error('Git storage not configured');
+            }
+
+            console.log('Step 1: Testing repository connection...');
+            await this.testConnection();
+            
+            console.log('Step 2: Testing directory creation...');
             await this.ensureImagesDirectory();
             
+            console.log('Step 3: Testing file operations...');
             // Test saving a simple file
             const testData = {
                 test: true,
@@ -485,11 +511,38 @@ Images are automatically named with the pattern:
                 null
             );
             
+            console.log('Step 4: Testing file reading...');
+            const readBack = await this.getFile('data/test.json');
+            if (!readBack.content || !readBack.content.test) {
+                throw new Error('File read/write test failed - could not read back test data');
+            }
+            
             console.log('Git storage test completed successfully');
             return true;
         } catch (error) {
             console.error('Git storage test failed:', error);
-            return false;
+            throw error; // Re-throw so admin panel can show the specific error
+        }
+    }
+
+    // Test image upload functionality
+    async testImageUpload() {
+        try {
+            // Create a small test image (1x1 pixel PNG)
+            const testImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+            
+            // Convert data URL to blob
+            const response = await fetch(testImageData);
+            const blob = await response.blob();
+            const file = new File([blob], 'test-image.png', { type: 'image/png' });
+            
+            console.log('Testing image upload...');
+            const path = await this.uploadImage(file, `test_image_${Date.now()}.png`);
+            console.log('Test image uploaded successfully to:', path);
+            return { success: true, path };
+        } catch (error) {
+            console.error('Test image upload failed:', error);
+            return { success: false, error: error.message };
         }
     }
 }
