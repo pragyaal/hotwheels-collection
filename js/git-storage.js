@@ -188,16 +188,33 @@ class GitStorageManager {
 
     // Save file to repository
     async saveFile(path, content, message, sha = null) {
-        const data = {
-            message,
-            content: btoa(JSON.stringify(content, null, 2))
-        };
+        try {
+            const data = {
+                message,
+                content: btoa(JSON.stringify(content, null, 2))
+            };
 
-        if (sha) {
-            data.sha = sha;
+            // If no SHA provided, try to get the current file's SHA
+            if (!sha) {
+                try {
+                    const existing = await this.getFile(path);
+                    if (existing.sha) {
+                        data.sha = existing.sha;
+                        console.log(`Found existing file at ${path}, using SHA: ${existing.sha}`);
+                    }
+                } catch (error) {
+                    // File doesn't exist yet, which is fine for new files
+                    console.log(`File ${path} doesn't exist yet, creating new file`);
+                }
+            } else {
+                data.sha = sha;
+            }
+
+            return await this.githubAPI(`contents/${path}`, 'PUT', data);
+        } catch (error) {
+            console.error(`Failed to save file ${path}:`, error);
+            throw error;
         }
-
-        return await this.githubAPI(`contents/${path}`, 'PUT', data);
     }
 
     // Load cars from Git repository
@@ -226,7 +243,6 @@ class GitStorageManager {
     // Save cars to Git repository
     async saveCars(cars) {
         try {
-            const existing = await this.getFile('data/cars.json');
             const data = {
                 cars,
                 lastUpdated: new Date().toISOString()
@@ -235,8 +251,7 @@ class GitStorageManager {
             await this.saveFile(
                 'data/cars.json',
                 data,
-                `Update cars collection - ${new Date().toLocaleString()}`,
-                existing.sha
+                `Update cars collection - ${new Date().toLocaleString()}`
             );
             
             return true;
@@ -265,7 +280,6 @@ class GitStorageManager {
     // Save wishlist to Git repository
     async saveWishlist(wishlist) {
         try {
-            const existing = await this.getFile('data/wishlist.json');
             const data = {
                 wishlist,
                 lastUpdated: new Date().toISOString()
@@ -274,8 +288,7 @@ class GitStorageManager {
             await this.saveFile(
                 'data/wishlist.json',
                 data,
-                `Update wishlist - ${new Date().toLocaleString()}`,
-                existing.sha
+                `Update wishlist - ${new Date().toLocaleString()}`
             );
             
             return true;
@@ -299,13 +312,10 @@ class GitStorageManager {
     // Save config to Git repository
     async saveConfig(config) {
         try {
-            const existing = await this.getFile('data/config.json');
-            
             await this.saveFile(
                 'data/config.json',
                 config,
-                `Update configuration - ${new Date().toLocaleString()}`,
-                existing.sha
+                `Update configuration - ${new Date().toLocaleString()}`
             );
             
             return true;
@@ -497,25 +507,42 @@ Images are automatically named with the pattern:
             await this.ensureImagesDirectory();
             
             console.log('Step 3: Testing file operations...');
-            // Test saving a simple file
+            // Test saving a simple file with unique name
+            const timestamp = Date.now();
+            const testFilePath = `data/test_${timestamp}.json`;
             const testData = {
                 test: true,
                 timestamp: new Date().toISOString(),
-                message: 'Git storage test'
+                message: 'Git storage test',
+                id: timestamp
             };
             
             await this.saveFile(
-                'data/test.json',
+                testFilePath,
                 testData,
-                'Test Git storage functionality',
+                `Test Git storage functionality - ${new Date().toLocaleString()}`,
                 null
             );
             
             console.log('Step 4: Testing file reading...');
-            const readBack = await this.getFile('data/test.json');
-            if (!readBack.content || !readBack.content.test) {
-                throw new Error('File read/write test failed - could not read back test data');
+            const readBack = await this.getFile(testFilePath);
+            if (!readBack.content || !readBack.content.test || readBack.content.id !== timestamp) {
+                throw new Error('File read/write test failed - could not read back test data correctly');
             }
+            
+            console.log('Step 5: Testing file update...');
+            const updatedData = {
+                ...testData,
+                updated: true,
+                updateTime: new Date().toISOString()
+            };
+            
+            await this.saveFile(
+                testFilePath,
+                updatedData,
+                'Test file update functionality',
+                readBack.sha
+            );
             
             console.log('Git storage test completed successfully');
             return true;
