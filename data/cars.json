@@ -1,4 +1,20 @@
 {
-  "cars": [],
+  "cars": [
+    {
+      "id": 1,
+      "name": "Test Hot Wheels Car",
+      "brand": "Hot Wheels",
+      "series": "HW City",
+      "year": "2024",
+      "color": "Red",
+      "scale": "1:64",
+      "condition": "Mint",
+      "purchasePrice": 1.99,
+      "purchaseDate": "2024-07-18",
+      "dateAdded": "2024-07-18T12:00:00.000Z",
+      "image": "images/cars/test_car_1234567890.jpg",
+      "description": "Test car for image display testing"
+    }
+  ],
   "lastUpdated": "2025-07-18T12:00:00.000Z"
 }

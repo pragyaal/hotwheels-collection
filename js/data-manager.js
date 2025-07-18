@@ -13,15 +13,16 @@ class DataManager {
         console.log('DataManager initializing...');
         // Check if Git storage is configured
         if (window.gitStorage) {
+            // First check if config can be loaded
             const gitConfigured = window.gitStorage.loadConfig();
             if (gitConfigured && window.gitStorage.isConfigured) {
                 this.useGitStorage = true;
                 console.log('Using Git storage for data persistence');
             } else {
-                console.log('Git storage not configured or not ready, using localStorage');
+                console.log('Git storage not configured, using localStorage');
             }
         } else {
-            console.log('Git storage not available');
+            console.log('Git storage not available, using localStorage');
         }
         
         console.log('DataManager: useGitStorage =', this.useGitStorage, 'gitStorage.isConfigured =', window.gitStorage?.isConfigured);
