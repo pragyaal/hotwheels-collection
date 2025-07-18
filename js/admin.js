@@ -176,6 +176,12 @@ class AdminPanel {
     }
 
     async checkAuthStatus() {
+        // FORCE SETUP SCREEN - TEMPORARY DEBUG
+        console.log('=== FORCING SETUP SCREEN FOR DEBUGGING ===');
+        console.log('Config:', window.dataManager?.config);
+        this.showSetupInstructions();
+        return;
+        
         const isAuthenticated = sessionStorage.getItem('adminAuth') === 'true';
         
         console.log('=== ADMIN AUTH DEBUG ===');
