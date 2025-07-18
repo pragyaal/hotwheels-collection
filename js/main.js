@@ -20,17 +20,6 @@ class CollectionView {
         }
 
         console.log('Data manager loaded, cars:', window.dataManager.cars.length);
-        console.log('Git storage active:', window.dataManager.isGitStorageActive());
-        console.log('Cars data:', window.dataManager.cars);
-
-        // Show debug info
-        this.updateDebugInfo();
-
-        // Force a fresh data load if we have no cars but Git storage is active
-        if (window.dataManager.cars.length === 0 && window.dataManager.isGitStorageActive()) {
-            console.log('No cars found but Git storage is active, forcing reload...');
-            await this.forceDataReload();
-        }
 
         this.setupEventListeners();
         this.populateFilters();
@@ -124,15 +113,6 @@ class CollectionView {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
                 this.showExportOptions();
-            });
-        }
-
-        // Refresh functionality
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', async () => {
-                console.log('Manual refresh requested');
-                await this.forceDataReload();
             });
         }
 
@@ -280,7 +260,7 @@ class CollectionView {
 
         container.innerHTML = cars.map(car => `
             <div class="car-card" onclick="collectionView.showCarDetails(${car.id})">
-                <img src="${car.image}" alt="${car.name}" class="car-image" 
+                <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="car-image" 
                      onerror="this.src='images/placeholder-car.svg'">
                 <div class="car-info">
                     <h3 class="car-name">${car.name}</h3>
@@ -315,7 +295,7 @@ class CollectionView {
         tbody.innerHTML = cars.map(car => `
             <tr onclick="collectionView.showCarDetails(${car.id})" style="cursor: pointer;">
                 <td>
-                    <img src="${car.image}" alt="${car.name}" class="table-car-image" 
+                    <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="table-car-image" 
                          onerror="this.src='images/placeholder-car.svg'">
                 </td>
                 <td><strong>${car.name}</strong></td>
@@ -339,7 +319,7 @@ class CollectionView {
         if (!modal || !carDetails) return;
 
         carDetails.innerHTML = `
-            <img src="${car.image}" alt="${car.name}" class="modal-car-image" 
+            <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="modal-car-image" 
                  onerror="this.src='images/placeholder-car.svg'">
             <h2 class="modal-car-name">${car.name}</h2>
             <p class="modal-car-brand">${car.brand}</p>
@@ -400,6 +380,24 @@ class CollectionView {
         }
     }
 
+    getImageUrl(imagePath) {
+        // If it's already a full URL, return as is
+        if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+            return imagePath;
+        }
+        
+        // If using Git storage and the image is in the repository, construct GitHub raw URL
+        if (window.dataManager && window.dataManager.isGitStorageActive() && window.gitStorage && window.gitStorage.isConfigured) {
+            if (imagePath && imagePath.startsWith('images/cars/')) {
+                const { repoOwner, repoName } = window.gitStorage.config;
+                return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+            }
+        }
+        
+        // Default to local path
+        return imagePath || 'images/placeholder-car.svg';
+    }
+
     async refreshData() {
         // Reload data from data manager
         if (window.dataManager.initPromise) {
@@ -410,96 +408,10 @@ class CollectionView {
         this.populateFilters();
         this.updateStatistics();
         this.displayCars();
-        this.updateDebugInfo();
         
         console.log('Data refreshed - found', window.dataManager.cars.length, 'cars');
     }
 
-    async forceDataReload() {
-        try {
-            console.log('Forcing data reload from Git storage...');
-            if (window.dataManager && window.dataManager.isGitStorageActive()) {
-                // Force reload from Git storage
-                await window.dataManager.loadCars();
-                await window.dataManager.loadWishlist();
-                console.log('Forced reload complete. Cars:', window.dataManager.cars.length);
-                
-                // Refresh the display
-                this.populateFilters();
-                this.updateStatistics();
-                this.displayCars();
-                this.updateDebugInfo();
-            }
-        } catch (error) {
-            console.error('Error forcing data reload:', error);
-        }
-    }
-
-    updateDebugInfo() {
-        const debugInfo = document.getElementById('debugInfo');
-        const debugText = document.getElementById('debugText');
-        
-        if (debugText && window.dataManager) {
-            const info = `
-                Cars loaded: ${window.dataManager.cars.length}<br>
-                Git storage active: ${window.dataManager.isGitStorageActive()}<br>
-                Storage configured: ${window.gitStorage ? window.gitStorage.isConfigured : 'No gitStorage'}<br>
-                Data manager initialized: ${window.dataManager.initialized}<br>
-                Current timestamp: ${new Date().toLocaleTimeString()}
-            `;
-            debugText.innerHTML = info;
-            
-            // Show debug info if no cars are found OR always show for now
-            if (debugInfo) {
-                debugInfo.style.display = 'block'; // Always show for debugging
-            }
-        }
-    }
-
-    // Add test data for debugging
-    addTestData() {
-        const testCars = [
-            {
-                id: 1,
-                name: "Test Car 1",
-                brand: "Hot Wheels",
-                series: "Fast & Furious",
-                year: "2023",
-                color: "Red",
-                scale: "1:64",
-                condition: "Mint",
-                purchasePrice: 5.99,
-                purchaseDate: "2024-01-15",
-                description: "Test car for debugging",
-                image: "images/placeholder-car.svg"
-            },
-            {
-                id: 2,
-                name: "Test Car 2",
-                brand: "Matchbox",
-                series: "City Series",
-                year: "2024",
-                color: "Blue",
-                scale: "1:64",
-                condition: "Near Mint",
-                purchasePrice: 4.99,
-                purchaseDate: "2024-02-10",
-                description: "Another test car",
-                image: "images/placeholder-car.svg"
-            }
-        ];
-        
-        // Add test cars to data manager
-        window.dataManager.cars = testCars;
-        
-        // Refresh display
-        this.populateFilters();
-        this.updateStatistics();
-        this.displayCars();
-        this.updateDebugInfo();
-        
-        console.log('Test data added:', testCars);
-    }
 }
 
 // Initialize when DOM is loaded

@@ -175,7 +175,7 @@ class AdminPanel {
         
         // Check if setup is required (no password set)
         if (window.dataManager.config.setupRequired && !window.dataManager.config.adminPassword) {
-            // First time setup - any password will work, then gets encrypted
+            // First time setup - any password will work, then gets encrypted and stored
             if (password.length < 6) {
                 errorDiv.textContent = 'Please enter a password with at least 6 characters for initial setup.';
                 errorDiv.style.display = 'block';
@@ -194,7 +194,14 @@ class AdminPanel {
             return;
         }
         
-        // Normal login process
+        // Normal login process - validate against stored password
+        if (!window.dataManager.config.adminPassword) {
+            errorDiv.textContent = 'Admin password not set. Please contact administrator.';
+            errorDiv.style.display = 'block';
+            document.getElementById('password').value = '';
+            return;
+        }
+        
         if (window.dataManager.validatePassword(password)) {
             sessionStorage.setItem('adminAuth', 'true');
             this.showAdminPanel();
@@ -224,7 +231,7 @@ class AdminPanel {
             }
         } else {
             if (loginDescription) {
-                loginDescription.textContent = 'Enter password to access admin panel';
+                loginDescription.textContent = 'Enter your admin password to access the panel';
                 loginDescription.style.color = '';
             }
         }
@@ -405,7 +412,7 @@ class AdminPanel {
                 <div class="manage-item-checkbox">
                     <input type="checkbox" class="car-checkbox" value="${car.id}" onchange="adminPanel.updateBulkActions()">
                 </div>
-                <img src="${car.image}" alt="${car.name}" class="manage-item-image" 
+                <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="manage-item-image" 
                      onerror="this.src='images/placeholder-car.svg'">
                 <div class="manage-item-info">
                     <div class="manage-item-name">${car.name}</div>
@@ -456,7 +463,7 @@ class AdminPanel {
 
         // Show image preview if exists
         if (car.image && car.image !== 'images/placeholder-car.svg') {
-            document.getElementById('imagePreview').innerHTML = `<img src="${car.image}" alt="Current image">`;
+            document.getElementById('imagePreview').innerHTML = `<img src="${this.getImageUrl(car.image)}" alt="Current image">`;
         }
 
         // Update form appearance
@@ -697,14 +704,19 @@ This action cannot be undone.`;
 
         const newPassword = document.getElementById('newPassword').value;
         if (newPassword) {
+            if (newPassword.length < 6) {
+                this.showMessage('Password must be at least 6 characters long.', 'error');
+                return;
+            }
             newConfig.adminPassword = window.dataManager.encrypt(newPassword);
             document.getElementById('newPassword').value = '';
+            this.showMessage('Settings and password updated successfully!', 'success');
+        } else {
+            this.showMessage('Settings saved successfully!', 'success');
         }
 
         window.dataManager.config = newConfig;
         window.dataManager.saveConfig();
-        
-        this.showMessage('Settings saved successfully!', 'success');
     }
 
     exportAllData() {
@@ -928,6 +940,24 @@ This action cannot be undone.`;
                 modal.style.display = 'none';
             }, 3000);
         }
+    }
+
+    getImageUrl(imagePath) {
+        // If it's already a full URL, return as is
+        if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+            return imagePath;
+        }
+        
+        // If using Git storage and the image is in the repository, construct GitHub raw URL
+        if (window.dataManager && window.dataManager.isGitStorageActive() && window.gitStorage && window.gitStorage.isConfigured) {
+            if (imagePath && imagePath.startsWith('images/cars/')) {
+                const { repoOwner, repoName } = window.gitStorage.config;
+                return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+            }
+        }
+        
+        // Default to local path
+        return imagePath || 'images/placeholder-car.svg';
     }
 }
 
