@@ -609,6 +609,104 @@ class AdminPanel {
         reader.readAsText(file);
     }
 
+    // Git Storage Management
+    setupGitStorage() {
+        const repoOwner = document.getElementById('gitRepoOwner').value.trim();
+        const repoName = document.getElementById('gitRepoName').value.trim();
+        const accessToken = document.getElementById('gitAccessToken').value.trim();
+
+        if (!repoOwner || !repoName || !accessToken) {
+            this.showMessage('Please fill in all Git storage fields', 'error');
+            return;
+        }
+
+        // Configure Git storage
+        window.gitStorage.configure({
+            repoOwner,
+            repoName,
+            accessToken
+        });
+
+        // Test connection and setup
+        this.testGitConnection().then(success => {
+            if (success) {
+                // Update data manager to use Git storage
+                window.dataManager.useGitStorage = true;
+                this.showMessage('Git storage configured successfully! Data will now be saved to your repository.', 'success');
+                
+                // Show current status
+                this.updateGitStorageStatus('Connected', 'success');
+            }
+        });
+    }
+
+    async testGitConnection() {
+        const statusDiv = document.getElementById('gitStorageStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection...';
+        statusDiv.className = 'status-message info';
+
+        try {
+            const success = await window.gitStorage.testConnection();
+            if (success) {
+                this.updateGitStorageStatus('Connection successful!', 'success');
+                return true;
+            } else {
+                this.updateGitStorageStatus('Connection failed. Please check your credentials.', 'error');
+                return false;
+            }
+        } catch (error) {
+            this.updateGitStorageStatus(`Connection error: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    updateGitStorageStatus(message, type) {
+        const statusDiv = document.getElementById('gitStorageStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i> ${message}`;
+        statusDiv.className = `status-message ${type}`;
+    }
+
+    showGitStorageHelp() {
+        const helpContent = `
+            <h3>Git Storage Setup Guide</h3>
+            <ol>
+                <li><strong>Create a Private Repository:</strong>
+                    <ul>
+                        <li>Go to GitHub and create a new <strong>private</strong> repository</li>
+                        <li>Name it something like "hotwheels-data"</li>
+                        <li>Initialize with a README (optional)</li>
+                    </ul>
+                </li>
+                <li><strong>Create Personal Access Token:</strong>
+                    <ul>
+                        <li>Go to GitHub Settings → Developer settings → Personal access tokens</li>
+                        <li>Generate new token (classic)</li>
+                        <li>Select "repo" scope for full repository access</li>
+                        <li>Copy the token (starts with "ghp_")</li>
+                    </ul>
+                </li>
+                <li><strong>Security Notes:</strong>
+                    <ul>
+                        <li>Keep your repository <strong>private</strong> to protect your data</li>
+                        <li>Never share your access token</li>
+                        <li>Your password and data will be encrypted in the repository</li>
+                        <li>You can revoke the token anytime from GitHub settings</li>
+                    </ul>
+                </li>
+            </ol>
+            <p><strong>Repository Structure:</strong><br>
+            Your data repository will contain:<br>
+            📁 data/<br>
+            ├── 📄 cars.json (your car collection)<br>
+            ├── 📄 wishlist.json (your wishlist)<br>
+            └── 📄 config.json (encrypted settings)</p>
+        `;
+        
+        this.showMessage(helpContent, 'info');
+    }
+
     showMessage(message, type = 'info') {
         const modal = document.getElementById('messageModal');
         const content = document.getElementById('messageContent');

@@ -272,6 +272,41 @@
                             </select>
                         </div>
 
+                        <div class="form-section">
+                            <h4>🔗 Git Storage Configuration</h4>
+                            <p class="form-description">
+                                Configure Git repository for permanent data storage. This requires a private GitHub repository and personal access token.
+                                <a href="#" onclick="adminPanel.showGitStorageHelp()" style="color: #667eea;">Learn more</a>
+                            </p>
+                            
+                            <div class="form-group">
+                                <label for="gitRepoOwner">Repository Owner</label>
+                                <input type="text" id="gitRepoOwner" placeholder="your-username">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="gitRepoName">Repository Name</label>
+                                <input type="text" id="gitRepoName" placeholder="hotwheels-data">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="gitAccessToken">GitHub Personal Access Token</label>
+                                <input type="password" id="gitAccessToken" placeholder="ghp_xxxxxxxxxxxx">
+                                <small>Needs 'repo' permissions for private repositories</small>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary" onclick="adminPanel.testGitConnection()">
+                                    <i class="fas fa-wifi"></i> Test Connection
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="adminPanel.setupGitStorage()">
+                                    <i class="fas fa-cloud-upload-alt"></i> Setup Git Storage
+                                </button>
+                            </div>
+                            
+                            <div id="gitStorageStatus" class="status-message" style="display: none;"></div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i>
                             Save Settings
@@ -304,6 +339,7 @@
         </div>
     </div>
 
+    <script src="js/git-storage.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/admin.js"></script>
 </body>

@@ -4,10 +4,17 @@ class DataManager {
         this.cars = [];
         this.wishlist = [];
         this.config = {};
+        this.useGitStorage = false;
         this.init();
     }
 
     async init() {
+        // Check if Git storage is configured
+        if (window.gitStorage && window.gitStorage.loadConfig()) {
+            this.useGitStorage = true;
+            console.log('Using Git storage for data persistence');
+        }
+        
         await this.loadConfig();
         await this.loadCars();
         await this.loadWishlist();
@@ -36,6 +43,20 @@ class DataManager {
     // Configuration management
     async loadConfig() {
         try {
+            // Try Git storage first
+            if (this.useGitStorage) {
+                try {
+                    this.config = await window.gitStorage.loadConfig();
+                    if (Object.keys(this.config).length > 0) {
+                        console.log('Loaded config from Git storage');
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Failed to load config from Git, falling back to local');
+                }
+            }
+
+            // Fallback to local file
             const response = await fetch('data/config.json');
             if (response.ok) {
                 this.config = await response.json();
@@ -60,7 +81,21 @@ class DataManager {
     // Car data management
     async loadCars() {
         try {
-            // First, try to load from the JSON file
+            // Try Git storage first
+            if (this.useGitStorage) {
+                try {
+                    const gitCars = await window.gitStorage.loadCars();
+                    if (gitCars.length > 0) {
+                        this.cars = gitCars;
+                        console.log('Loaded cars from Git storage:', this.cars.length);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Failed to load cars from Git, falling back to local');
+                }
+            }
+
+            // Fallback to local storage and files
             let fileData = [];
             try {
                 const response = await fetch('data/cars.json');
@@ -81,9 +116,6 @@ class DataManager {
                     
                     // Use localStorage data if it exists and has more cars or newer timestamp
                     if (localCars.length > 0) {
-                        const localUpdated = new Date(parsedLocal.lastUpdated || 0).getTime();
-                        
-                        // Use localStorage data (it represents current session changes)
                         this.cars = localCars;
                         console.log('Loaded cars from localStorage:', this.cars.length);
                         return;
@@ -103,7 +135,21 @@ class DataManager {
 
     async loadWishlist() {
         try {
-            // First, try to load from the JSON file
+            // Try Git storage first
+            if (this.useGitStorage) {
+                try {
+                    const gitWishlist = await window.gitStorage.loadWishlist();
+                    if (gitWishlist.length > 0) {
+                        this.wishlist = gitWishlist;
+                        console.log('Loaded wishlist from Git storage:', this.wishlist.length);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Failed to load wishlist from Git, falling back to local');
+                }
+            }
+
+            // Fallback to local storage and files
             let fileData = [];
             try {
                 const response = await fetch('data/wishlist.json');
@@ -356,14 +402,29 @@ class DataManager {
         }
     }
 
-    // Data persistence (simulated - in real implementation, this would save to server)
-    saveCars() {
+    // Data persistence
+    async saveCars() {
         const data = {
             cars: this.cars,
             lastUpdated: new Date().toISOString()
         };
         
-        // Store in localStorage for session persistence
+        // Try Git storage first
+        if (this.useGitStorage) {
+            try {
+                const success = await window.gitStorage.saveCars(this.cars);
+                if (success) {
+                    console.log('Cars saved to Git storage');
+                    // Also save to localStorage as backup
+                    localStorage.setItem('hotwheels_cars', JSON.stringify(data));
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to save cars to Git storage:', error);
+            }
+        }
+        
+        // Fallback to localStorage
         localStorage.setItem('hotwheels_cars', JSON.stringify(data));
         
         // Create downloadable JSON file for permanent storage
@@ -372,17 +433,47 @@ class DataManager {
         console.log('Cars saved to localStorage and download created');
     }
 
-    saveWishlist() {
+    async saveWishlist() {
         const data = {
             wishlist: this.wishlist,
             lastUpdated: new Date().toISOString()
         };
         
+        // Try Git storage first
+        if (this.useGitStorage) {
+            try {
+                const success = await window.gitStorage.saveWishlist(this.wishlist);
+                if (success) {
+                    console.log('Wishlist saved to Git storage');
+                    localStorage.setItem('hotwheels_wishlist', JSON.stringify(data));
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to save wishlist to Git storage:', error);
+            }
+        }
+        
+        // Fallback to localStorage
         localStorage.setItem('hotwheels_wishlist', JSON.stringify(data));
         this.createDownloadableFile('wishlist.json', data);
     }
 
-    saveConfig() {
+    async saveConfig() {
+        // Try Git storage first
+        if (this.useGitStorage) {
+            try {
+                const success = await window.gitStorage.saveConfig(this.config);
+                if (success) {
+                    console.log('Config saved to Git storage');
+                    localStorage.setItem('hotwheels_config', JSON.stringify(this.config));
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to save config to Git storage:', error);
+            }
+        }
+        
+        // Fallback to localStorage
         localStorage.setItem('hotwheels_config', JSON.stringify(this.config));
         this.createDownloadableFile('config.json', this.config);
     }
