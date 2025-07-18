@@ -1,6 +1,6 @@
 {
-  "adminPassword": "",
+  "adminPassword": "YWRtaW4=",
   "siteName": "Hot Wheels Collection",
   "currency": "INR",
-  "setupRequired": true
+  "setupRequired": false
 }
