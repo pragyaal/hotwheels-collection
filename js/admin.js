@@ -338,28 +338,39 @@ class AdminPanel {
     }
 
     async processImage(file, carName) {
-        // In a real implementation, this would upload to a server
-        // For now, we'll create a local URL and suggest manual file management
         const timestamp = new Date().getTime();
         const fileName = `${carName.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.${file.name.split('.').pop()}`;
         
-        // Create a blob URL for immediate use
-        const blobUrl = URL.createObjectURL(file);
-        
-        // Store the file info for manual handling
-        if (!window.pendingImages) {
-            window.pendingImages = [];
-        }
-        
-        window.pendingImages.push({
-            fileName: fileName,
-            file: file,
-            suggestedPath: `images/cars/${fileName}`
-        });
+        // If Git storage is configured, upload image to repository
+        if (window.dataManager.isGitStorageActive()) {
+            try {
+                this.showMessage('Uploading image to repository...', 'info');
+                const imagePath = await window.gitStorage.uploadImage(file, fileName);
+                this.showMessage('Image uploaded successfully!', 'success');
+                return imagePath;
+            } catch (error) {
+                console.error('Failed to upload image to Git:', error);
+                this.showMessage(`Image upload failed: ${error.message}. Using placeholder instead.`, 'error');
+                return 'images/placeholder-car.svg';
+            }
+        } else {
+            // Fallback for local storage - create blob URL and store for manual handling
+            const blobUrl = URL.createObjectURL(file);
+            
+            // Store the file info for manual handling
+            if (!window.pendingImages) {
+                window.pendingImages = [];
+            }
+            
+            window.pendingImages.push({
+                fileName: fileName,
+                file: file,
+                suggestedPath: `images/cars/${fileName}`
+            });
 
-        this.showMessage(`Image processed. Please save the file as: images/cars/${fileName}`, 'info');
-        
-        return `images/cars/${fileName}`;
+            this.showMessage(`Image processed. Please save the file as: images/cars/${fileName}`, 'info');
+            return `images/cars/${fileName}`;
+        }
     }
 
     resetCarForm() {

@@ -14,8 +14,14 @@ class CollectionView {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
 
+        // Wait for data manager to finish initializing
+        if (window.dataManager.initPromise) {
+            await window.dataManager.initPromise;
+        }
+
         console.log('Data manager loaded, cars:', window.dataManager.cars.length);
         console.log('Git storage active:', window.dataManager.isGitStorageActive());
+        console.log('Cars data:', window.dataManager.cars);
 
         this.setupEventListeners();
         this.populateFilters();

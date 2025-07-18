@@ -5,7 +5,8 @@ class DataManager {
         this.wishlist = [];
         this.config = {};
         this.useGitStorage = false;
-        this.init();
+        this.initialized = false;
+        this.initPromise = this.init();
     }
 
     async init() {
@@ -26,6 +27,9 @@ class DataManager {
         await this.loadConfig();
         await this.loadCars();
         await this.loadWishlist();
+        
+        this.initialized = true;
+        console.log('DataManager initialization complete');
     }
 
     // Simple encryption/decryption for password
