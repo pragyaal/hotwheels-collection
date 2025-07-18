@@ -1,23 +1,4 @@
 {
-  "wishlist": [
-    {
-      "id": 1,
-      "name": "McLaren P1",
-      "brand": "Hot Wheels",
-      "series": "Car Culture",
-      "expectedPrice": 6.99,
-      "notes": "Looking for the orange variant from the McLaren series",
-      "dateAdded": "2025-01-18T12:00:00.000Z"
-    },
-    {
-      "id": 2,
-      "name": "Bugatti Chiron",
-      "brand": "Hot Wheels",
-      "series": "Exotics",
-      "expectedPrice": 2.99,
-      "notes": "Any color variant would be great",
-      "dateAdded": "2025-01-18T12:15:00.000Z"
-    }
-  ],
-  "lastUpdated": "2025-01-18T12:15:00.000Z"
+  "wishlist": [],
+  "lastUpdated": "2025-07-18T12:00:00.000Z"
 }

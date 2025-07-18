@@ -153,6 +153,28 @@ class AdminPanel {
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('loginError');
         
+        // Check if setup is required (no password set)
+        if (window.dataManager.config.setupRequired && !window.dataManager.config.adminPassword) {
+            // First time setup - any password will work, then gets encrypted
+            if (password.length < 6) {
+                errorDiv.textContent = 'Please enter a password with at least 6 characters for initial setup.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            // Set the new password
+            window.dataManager.config.adminPassword = window.dataManager.encrypt(password);
+            window.dataManager.config.setupRequired = false;
+            window.dataManager.saveConfig();
+            
+            sessionStorage.setItem('adminAuth', 'true');
+            this.showAdminPanel();
+            this.showMessage('Welcome! Your admin password has been set up successfully.', 'success');
+            errorDiv.style.display = 'none';
+            return;
+        }
+        
+        // Normal login process
         if (window.dataManager.validatePassword(password)) {
             sessionStorage.setItem('adminAuth', 'true');
             this.showAdminPanel();
@@ -172,6 +194,20 @@ class AdminPanel {
     showLoginForm() {
         document.getElementById('loginSection').style.display = 'block';
         document.getElementById('adminPanel').style.display = 'none';
+        
+        // Check if this is first-time setup
+        const loginDescription = document.getElementById('loginDescription');
+        if (window.dataManager.config.setupRequired && !window.dataManager.config.adminPassword) {
+            if (loginDescription) {
+                loginDescription.textContent = 'First time setup: Create your admin password (minimum 6 characters)';
+                loginDescription.style.color = '#667eea';
+            }
+        } else {
+            if (loginDescription) {
+                loginDescription.textContent = 'Enter password to access admin panel';
+                loginDescription.style.color = '';
+            }
+        }
     }
 
     showAdminPanel() {

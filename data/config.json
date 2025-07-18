@@ -1,5 +1,6 @@
 {
-  "adminPassword": "aG90d2hlZWxzMTIz",
+  "adminPassword": "",
   "siteName": "Hot Wheels Collection",
-  "currency": "USD"
+  "currency": "USD",
+  "setupRequired": true
 }
