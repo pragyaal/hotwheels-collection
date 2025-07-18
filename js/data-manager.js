@@ -9,13 +9,18 @@ class DataManager {
     }
 
     async init() {
+        console.log('DataManager initializing...');
         // Check if Git storage is configured
         if (window.gitStorage) {
             const gitConfigured = window.gitStorage.loadConfig();
             if (gitConfigured) {
                 this.useGitStorage = true;
                 console.log('Using Git storage for data persistence');
+            } else {
+                console.log('Git storage not configured, using localStorage');
             }
+        } else {
+            console.log('Git storage not available');
         }
         
         await this.loadConfig();
@@ -191,23 +196,24 @@ class DataManager {
     }
 
     // Add new car
-    addCar(carData) {
+    async addCar(carData) {
+        console.log('Adding car, useGitStorage:', this.useGitStorage);
         const newCar = {
             id: this.getNextId(),
             ...carData,
             dateAdded: new Date().toISOString()
         };
         this.cars.push(newCar);
-        this.saveCars();
+        await this.saveCars();
         return newCar;
     }
 
     // Update car
-    updateCar(id, carData) {
+    async updateCar(id, carData) {
         const index = this.cars.findIndex(car => car.id === parseInt(id));
         if (index !== -1) {
             this.cars[index] = { ...this.cars[index], ...carData };
-            this.saveCars();
+            await this.saveCars();
             return this.cars[index];
         }
         return null;
@@ -239,14 +245,14 @@ class DataManager {
         return this.wishlist;
     }
 
-    addToWishlist(item) {
+    async addToWishlist(item) {
         const newItem = {
             id: this.getNextWishlistId(),
             ...item,
             dateAdded: new Date().toISOString()
         };
         this.wishlist.push(newItem);
-        this.saveWishlist();
+        await this.saveWishlist();
         return newItem;
     }
 
@@ -417,9 +423,11 @@ class DataManager {
 
     // Data persistence
     async saveCars() {
+        console.log('saveCars called, useGitStorage:', this.useGitStorage);
         // If Git storage is configured, save there only
         if (this.useGitStorage) {
             try {
+                console.log('Attempting to save cars to Git repository...');
                 const success = await window.gitStorage.saveCars(this.cars);
                 if (success) {
                     console.log('Cars saved to Git repository');
@@ -434,6 +442,7 @@ class DataManager {
         }
         
         // Only use localStorage if Git storage is not configured
+        console.log('Saving cars to localStorage (Git storage not configured)');
         const data = {
             cars: this.cars,
             lastUpdated: new Date().toISOString()
@@ -445,9 +454,11 @@ class DataManager {
     }
 
     async saveWishlist() {
+        console.log('saveWishlist called, useGitStorage:', this.useGitStorage);
         // If Git storage is configured, save there only
         if (this.useGitStorage) {
             try {
+                console.log('Attempting to save wishlist to Git repository...');
                 const success = await window.gitStorage.saveWishlist(this.wishlist);
                 if (success) {
                     console.log('Wishlist saved to Git repository');
@@ -462,6 +473,7 @@ class DataManager {
         }
         
         // Only use localStorage if Git storage is not configured
+        console.log('Saving wishlist to localStorage (Git storage not configured)');
         const data = {
             wishlist: this.wishlist,
             lastUpdated: new Date().toISOString()

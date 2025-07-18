@@ -293,11 +293,11 @@ class AdminPanel {
 
         try {
             if (this.editingCarId) {
-                window.dataManager.updateCar(this.editingCarId, formData);
+                await window.dataManager.updateCar(this.editingCarId, formData);
                 this.showMessage('Car updated successfully! Data saved permanently.', 'success');
                 this.editingCarId = null;
             } else {
-                const newCar = window.dataManager.addCar(formData);
+                const newCar = await window.dataManager.addCar(formData);
                 console.log('Car added:', newCar);
                 
                 // Check storage type and show appropriate message
@@ -772,6 +772,8 @@ This action cannot be undone.`;
                 if (success) {
                     // Update data manager to use Git storage
                     window.dataManager.useGitStorage = true;
+                    console.log('Data manager updated to use Git storage:', window.dataManager.useGitStorage);
+                    
                     this.showMessage('Git storage configured successfully! Data will now be saved to your repository.', 'success');
                     
                     // Show current status
@@ -782,6 +784,13 @@ This action cannot be undone.`;
                     
                     // Clear the form for security
                     document.getElementById('gitAccessToken').value = '';
+                    
+                    // Suggest page reload for full Git storage activation
+                    setTimeout(() => {
+                        if (confirm('Git storage is now configured! Would you like to reload the page to ensure all features are properly connected to your repository?')) {
+                            window.location.reload();
+                        }
+                    }, 2000);
                 }
             }).catch(error => {
                 this.showMessage(`Git setup failed: ${error.message}`, 'error');
