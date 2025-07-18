@@ -8,15 +8,49 @@ class GitStorageManager {
         this.isConfigured = false;
     }
 
+    // Validate configuration before setting up
+    validateConfig(config) {
+        const errors = [];
+        
+        if (!config.repoOwner || config.repoOwner.trim() === '') {
+            errors.push('Repository Owner is required');
+        }
+        
+        if (!config.repoName || config.repoName.trim() === '') {
+            errors.push('Repository Name is required');
+        }
+        
+        if (!config.accessToken || config.accessToken.trim() === '') {
+            errors.push('Access Token is required');
+        }
+        
+        // Basic token format validation
+        if (config.accessToken && !config.accessToken.startsWith('ghp_') && !config.accessToken.startsWith('github_pat_')) {
+            errors.push('Access Token should start with "ghp_" (classic) or "github_pat_" (fine-grained)');
+        }
+        
+        return errors;
+    }
+
     // Configure Git storage
     configure(config) {
-        this.accessToken = config.accessToken;
-        this.repoOwner = config.repoOwner;
-        this.repoName = config.repoName;
+        // Validate first
+        const errors = this.validateConfig(config);
+        if (errors.length > 0) {
+            throw new Error(`Configuration errors: ${errors.join(', ')}`);
+        }
+        
+        this.accessToken = config.accessToken.trim();
+        this.repoOwner = config.repoOwner.trim();
+        this.repoName = config.repoName.trim();
         this.isConfigured = true;
         
         // Store config in localStorage (encrypted)
-        const encryptedConfig = this.encrypt(JSON.stringify(config));
+        const encryptedConfig = this.encrypt(JSON.stringify({
+            accessToken: this.accessToken,
+            repoOwner: this.repoOwner,
+            repoName: this.repoName
+        }));
         localStorage.setItem('git_storage_config', encryptedConfig);
     }
 
@@ -62,24 +96,48 @@ class GitStorageManager {
 
         const url = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}/${endpoint}`;
         
-        const options = {
+        const baseOptions = {
             method,
             headers: {
-                'Authorization': `token ${this.accessToken}`,
                 'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'User-Agent': 'Hot-Wheels-Collection/1.0'
             }
         };
 
         if (data && (method === 'PUT' || method === 'POST')) {
-            options.body = JSON.stringify(data);
+            baseOptions.body = JSON.stringify(data);
         }
 
-        const response = await fetch(url, options);
+        // Try Bearer format first (newer)
+        let options = {
+            ...baseOptions,
+            headers: {
+                ...baseOptions.headers,
+                'Authorization': `Bearer ${this.accessToken}`
+            }
+        };
+
+        let response = await fetch(url, options);
+        
+        // If Bearer fails with 401, try token format (older)
+        if (!response.ok && response.status === 401) {
+            options.headers['Authorization'] = `token ${this.accessToken}`;
+            response = await fetch(url, options);
+        }
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`GitHub API Error: ${error.message}`);
+            let errorMessage = `GitHub API Error (${response.status})`;
+            try {
+                const errorData = await response.json();
+                errorMessage += `: ${errorData.message}`;
+                if (errorData.documentation_url) {
+                    console.log('Documentation:', errorData.documentation_url);
+                }
+            } catch {
+                errorMessage += `: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         return response.json();
@@ -227,11 +285,67 @@ class GitStorageManager {
     // Test connection to repository
     async testConnection() {
         try {
-            await this.githubAPI('');
+            if (!this.isConfigured) {
+                throw new Error('Git storage not configured');
+            }
+            
+            // Test by getting repository information
+            const url = `https://api.github.com/repos/${this.repoOwner}/${this.repoName}`;
+            
+            // Try Bearer format first (newer)
+            let response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'Hot-Wheels-Collection/1.0'
+                }
+            });
+            
+            // If Bearer fails with 401, try token format (older)
+            if (!response.ok && response.status === 401) {
+                console.log('Bearer auth failed, trying token format...');
+                response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `token ${this.accessToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Hot-Wheels-Collection/1.0'
+                    }
+                });
+            }
+            
+            if (!response.ok) {
+                let errorMessage;
+                try {
+                    const errorData = await response.json();
+                    switch (response.status) {
+                        case 401:
+                            errorMessage = 'Invalid access token. Please verify your token is correct and has not expired.';
+                            break;
+                        case 403:
+                            errorMessage = 'Access forbidden. Make sure your token has "repo" permissions for private repositories.';
+                            break;
+                        case 404:
+                            errorMessage = `Repository not found. Check that "${this.repoOwner}/${this.repoName}" exists and is accessible to your token.`;
+                            break;
+                        default:
+                            errorMessage = `GitHub API Error (${response.status}): ${errorData.message || response.statusText}`;
+                    }
+                    console.error('GitHub API Error Details:', errorData);
+                } catch {
+                    errorMessage = `GitHub API Error (${response.status}): ${response.statusText}`;
+                }
+                console.error('Git connection test failed:', errorMessage);
+                throw new Error(errorMessage);
+            }
+            
+            const repoData = await response.json();
+            console.log('Repository connection successful:', repoData.name);
             return true;
         } catch (error) {
             console.error('Git connection test failed:', error);
-            return false;
+            throw error; // Re-throw to let the calling function handle it
         }
     }
 }

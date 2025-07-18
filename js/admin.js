@@ -755,39 +755,40 @@ This action cannot be undone.`;
 
     // Git Storage Management
     setupGitStorage() {
-        const repoOwner = document.getElementById('gitRepoOwner').value.trim();
-        const repoName = document.getElementById('gitRepoName').value.trim();
-        const accessToken = document.getElementById('gitAccessToken').value.trim();
+        const repoOwner = document.getElementById('gitRepoOwner').value;
+        const repoName = document.getElementById('gitRepoName').value;
+        const accessToken = document.getElementById('gitAccessToken').value;
 
-        if (!repoOwner || !repoName || !accessToken) {
-            this.showMessage('Please fill in all Git storage fields', 'error');
-            return;
+        try {
+            // Configure Git storage (includes validation)
+            window.gitStorage.configure({
+                repoOwner,
+                repoName,
+                accessToken
+            });
+
+            // Test connection and setup
+            this.testGitConnection().then(success => {
+                if (success) {
+                    // Update data manager to use Git storage
+                    window.dataManager.useGitStorage = true;
+                    this.showMessage('Git storage configured successfully! Data will now be saved to your repository.', 'success');
+                    
+                    // Show current status
+                    this.updateGitStorageStatus('Connected', 'success');
+                    
+                    // Update storage status display
+                    this.updateStorageStatusDisplay();
+                    
+                    // Clear the form for security
+                    document.getElementById('gitAccessToken').value = '';
+                }
+            }).catch(error => {
+                this.showMessage(`Git setup failed: ${error.message}`, 'error');
+            });
+        } catch (error) {
+            this.showMessage(`Configuration error: ${error.message}`, 'error');
         }
-
-        // Configure Git storage
-        window.gitStorage.configure({
-            repoOwner,
-            repoName,
-            accessToken
-        });
-
-        // Test connection and setup
-        this.testGitConnection().then(success => {
-            if (success) {
-                // Update data manager to use Git storage
-                window.dataManager.useGitStorage = true;
-                this.showMessage('Git storage configured successfully! Data will now be saved to your repository.', 'success');
-                
-                // Show current status
-                this.updateGitStorageStatus('Connected', 'success');
-                
-                // Update storage status display
-                this.updateStorageStatusDisplay();
-                
-                // Clear the form for security
-                document.getElementById('gitAccessToken').value = '';
-            }
-        });
     }
 
     async testGitConnection() {
@@ -797,16 +798,18 @@ This action cannot be undone.`;
         statusDiv.className = 'status-message info';
 
         try {
-            const success = await window.gitStorage.testConnection();
-            if (success) {
-                this.updateGitStorageStatus('Connection successful!', 'success');
-                return true;
-            } else {
-                this.updateGitStorageStatus('Connection failed. Please check your credentials.', 'error');
+            // Check if git storage is configured
+            if (!window.gitStorage.isConfigured) {
+                this.updateGitStorageStatus('Git storage not configured. Please fill in all fields above.', 'error');
                 return false;
             }
+
+            const success = await window.gitStorage.testConnection();
+            this.updateGitStorageStatus('Connection successful! Git storage is working.', 'success');
+            return true;
         } catch (error) {
-            this.updateGitStorageStatus(`Connection error: ${error.message}`, 'error');
+            console.error('Git connection test error:', error);
+            this.updateGitStorageStatus(error.message, 'error');
             return false;
         }
     }
