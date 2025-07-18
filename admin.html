@@ -110,7 +110,7 @@
                         <div id="storageStatusMessage">
                             <strong>Data Storage:</strong> <span id="storageStatusText">Loading...</span>
                             <div id="gitStoragePrompt" style="margin-top: 0.5rem; display: none;">
-                                <small>⚠️ <a href="#" onclick="adminPanel.switchToSettingsTab()" style="color: #fff; text-decoration: underline;">Configure Git storage in Settings</a> for permanent data backup and image storage.</small>
+                                <small>⚠️ <a href="#" onclick="adminPanel.switchToSettingsTab()" style="color: #fff; text-decoration: underline;">Configure Firebase database in Settings</a> for permanent data backup and image storage.</small>
                             </div>
                         </div>
                     </div>
@@ -182,7 +182,7 @@
                             <input type="file" id="carImage" accept="image/*">
                             <small class="form-note">
                                 <i class="fas fa-info-circle"></i>
-                                Images are automatically uploaded to your configured Git repository. Configure Git storage in Settings for permanent image storage.
+                                Images are automatically uploaded to your configured Firebase Storage. Configure Firebase in Settings for permanent image storage.
                             </small>
                             <div id="imagePreview" class="image-preview"></div>
                         </div>
@@ -287,54 +287,69 @@
                         </div>
 
                         <div class="form-section">
-                            <h4>🔗 Git Storage Configuration</h4>
+                            <h4>� Firebase Database Configuration</h4>
                             <div class="info-panel" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); margin-bottom: 1rem;">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <strong>Required for Permanent Storage!</strong> 
-                                Without Git storage, your data is only saved locally in your browser and will be lost if you clear browser data.
+                                Without Firebase, your data is only saved locally in your browser and will be lost if you clear browser data.
                             </div>
                             <p class="form-description">
-                                Configure Git repository for permanent data storage. This requires a private GitHub repository and personal access token.
-                                <a href="IMAGE_SETUP_GUIDE.md" target="_blank" style="color: #667eea;">📖 Step-by-step setup guide</a>
+                                Configure Firebase for permanent data storage and real-time sync. Create a free Firebase project at 
+                                <a href="https://console.firebase.google.com" target="_blank" style="color: #667eea;">Firebase Console</a>
                             </p>
                             
                             <div class="form-group">
-                                <label for="gitRepoOwner">Repository Owner</label>
-                                <input type="text" id="gitRepoOwner" placeholder="your-github-username">
-                                <small>Your GitHub username (e.g., if your profile is github.com/johndoe, enter "johndoe")</small>
+                                <label for="firebaseApiKey">API Key</label>
+                                <input type="password" id="firebaseApiKey" placeholder="AIzaSyDXXXXXXXXXXXXXXXXXXXX">
+                                <small>Found in Firebase Console → Project Settings → General → Your apps</small>
                             </div>
                             
                             <div class="form-group">
-                                <label for="gitRepoName">Repository Name</label>
-                                <input type="text" id="gitRepoName" placeholder="hotwheels-collection-data">
-                                <small>Name of your private repository (create one at github.com/new)</small>
+                                <label for="firebaseProjectId">Project ID</label>
+                                <input type="text" id="firebaseProjectId" placeholder="my-hotwheels-collection">
+                                <small>Your Firebase project ID (also found in Project Settings)</small>
                             </div>
                             
                             <div class="form-group">
-                                <label for="gitAccessToken">GitHub Personal Access Token</label>
-                                <input type="password" id="gitAccessToken" placeholder="ghp_xxxxxxxxxxxx">
-                                <small>Generate at GitHub → Settings → Developer settings → Personal access tokens. Needs 'repo' permission.</small>
+                                <label for="firebaseAuthDomain">Auth Domain</label>
+                                <input type="text" id="firebaseAuthDomain" placeholder="my-hotwheels-collection.firebaseapp.com">
+                                <small>Usually your-project-id.firebaseapp.com</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="firebaseStorageBucket">Storage Bucket</label>
+                                <input type="text" id="firebaseStorageBucket" placeholder="my-hotwheels-collection.appspot.com">
+                                <small>Usually your-project-id.appspot.com</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="firebaseMessagingSenderId">Messaging Sender ID</label>
+                                <input type="text" id="firebaseMessagingSenderId" placeholder="123456789012">
+                                <small>Numeric ID found in Project Settings</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="firebaseAppId">App ID</label>
+                                <input type="text" id="firebaseAppId" placeholder="1:123456789012:web:abcdef123456">
+                                <small>App ID found in Project Settings → Your apps</small>
                             </div>
                             
                             <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" onclick="adminPanel.testGitConnection()">
+                                <button type="button" class="btn btn-secondary" onclick="adminPanel.testFirebaseConnection()">
                                     <i class="fas fa-wifi"></i> Test Connection
                                 </button>
-                                <button type="button" class="btn btn-info" onclick="adminPanel.testGitOperations()">
-                                    <i class="fas fa-vial"></i> Test Git Operations
+                                <button type="button" class="btn btn-info" onclick="adminPanel.testFirebaseOperations()">
+                                    <i class="fas fa-vial"></i> Test Operations
                                 </button>
                                 <button type="button" class="btn btn-warning" onclick="adminPanel.testImageUpload()">
                                     <i class="fas fa-image"></i> Test Image Upload
                                 </button>
-                                <button type="button" class="btn btn-danger" onclick="adminPanel.testDeletion()">
-                                    <i class="fas fa-trash"></i> Test Deletion
-                                </button>
-                                <button type="button" class="btn btn-success" onclick="adminPanel.setupGitStorage()">
-                                    <i class="fas fa-cloud-upload-alt"></i> Setup Git Storage
+                                <button type="button" class="btn btn-success" onclick="adminPanel.setupFirebase()">
+                                    <i class="fas fa-rocket"></i> Setup Firebase
                                 </button>
                             </div>
                             
-                            <div id="gitStorageStatus" class="status-message" style="display: none;"></div>
+                            <div id="firebaseStatus" class="status-message" style="display: none;"></div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">
@@ -369,7 +384,14 @@
         </div>
     </div>
 
-    <script src="js/git-storage.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/firebase-manager.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/admin.js"></script>
 </body>

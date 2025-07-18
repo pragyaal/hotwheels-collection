@@ -303,7 +303,7 @@ class GitStorageManager {
     }
 
     // Load config from Git repository
-    async loadConfig() {
+    async loadSiteConfig() {
         try {
             const result = await this.getFile('data/config.json');
             return result.content || {};
@@ -314,7 +314,7 @@ class GitStorageManager {
     }
 
     // Save config to Git repository
-    async saveConfig(config) {
+    async saveSiteConfig(config) {
         try {
             await this.saveFile(
                 'data/config.json',

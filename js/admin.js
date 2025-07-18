@@ -19,26 +19,26 @@ class AdminPanel {
 
     updateStorageStatusDisplay() {
         const statusElement = document.getElementById('storageStatusText');
-        const gitPrompt = document.getElementById('gitStoragePrompt');
+        const firebasePrompt = document.getElementById('firebaseStoragePrompt');
         
         if (statusElement && window.dataManager) {
             statusElement.textContent = window.dataManager.getStorageStatusMessage();
             
-            // Show/hide Git storage prompt
-            if (gitPrompt) {
-                if (window.dataManager.isGitStorageActive()) {
-                    gitPrompt.style.display = 'none';
+            // Show/hide Firebase storage prompt
+            if (firebasePrompt) {
+                if (window.dataManager.useFirebase) {
+                    firebasePrompt.style.display = 'none';
                 } else {
-                    gitPrompt.style.display = 'block';
+                    firebasePrompt.style.display = 'block';
                 }
             }
             
             // Update icon based on storage type
             const panel = document.getElementById('storageInfoPanel');
             if (panel) {
-                if (window.dataManager.isGitStorageActive()) {
+                if (window.dataManager.useFirebase) {
                     panel.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                    panel.querySelector('i').className = 'fas fa-cloud-check';
+                    panel.querySelector('i').className = 'fas fa-database';
                 } else {
                     panel.style.background = 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)';
                     panel.querySelector('i').className = 'fas fa-exclamation-triangle';
@@ -1091,6 +1091,139 @@ This action cannot be undone.`;
             console.error('Deletion test error:', error);
             this.updateGitStorageStatus(`❌ Deletion test error: ${error.message}`, 'error');
         }
+    }
+
+    // Firebase Setup Methods
+    async setupFirebase() {
+        try {
+            this.updateFirebaseStatus('Setting up Firebase...', 'info');
+            
+            const config = {
+                apiKey: document.getElementById('firebaseApiKey').value.trim(),
+                authDomain: document.getElementById('firebaseAuthDomain').value.trim(),
+                projectId: document.getElementById('firebaseProjectId').value.trim(),
+                storageBucket: document.getElementById('firebaseStorageBucket').value.trim(),
+                messagingSenderId: document.getElementById('firebaseMessagingSenderId').value.trim(),
+                appId: document.getElementById('firebaseAppId').value.trim()
+            };
+            
+            // Validate config
+            const errors = this.validateFirebaseConfig(config);
+            if (errors.length > 0) {
+                this.updateFirebaseStatus(`❌ Configuration errors: ${errors.join(', ')}`, 'error');
+                return;
+            }
+            
+            // Test Firebase setup
+            const success = await window.dataManager.setupFirebase(config);
+            if (success) {
+                this.updateFirebaseStatus('✅ Firebase setup completed successfully! Your data will now be saved to Firebase.', 'success');
+                
+                // Force data manager reinitialization
+                await window.dataManager.initPromise;
+                this.updateStorageStatusDisplay();
+                
+                // Reload the page to ensure everything is properly initialized
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                this.updateFirebaseStatus('❌ Firebase setup failed. Please check your configuration.', 'error');
+            }
+        } catch (error) {
+            console.error('Firebase setup error:', error);
+            this.updateFirebaseStatus(`❌ Firebase setup error: ${error.message}`, 'error');
+        }
+    }
+
+    validateFirebaseConfig(config) {
+        const errors = [];
+        
+        if (!config.apiKey || !config.apiKey.startsWith('AIza')) {
+            errors.push('API Key should start with "AIza"');
+        }
+        
+        if (!config.projectId || config.projectId.trim() === '') {
+            errors.push('Project ID is required');
+        }
+        
+        if (!config.authDomain || !config.authDomain.includes('.firebaseapp.com')) {
+            errors.push('Auth Domain should end with .firebaseapp.com');
+        }
+        
+        if (!config.storageBucket || !config.storageBucket.includes('.appspot.com')) {
+            errors.push('Storage Bucket should end with .appspot.com');
+        }
+        
+        if (!config.messagingSenderId || !/^\d+$/.test(config.messagingSenderId)) {
+            errors.push('Messaging Sender ID should be numeric');
+        }
+        
+        if (!config.appId || !config.appId.includes(':')) {
+            errors.push('App ID format appears invalid');
+        }
+        
+        return errors;
+    }
+
+    async testFirebaseConnection() {
+        try {
+            this.updateFirebaseStatus('Testing Firebase connection...', 'info');
+            
+            if (!window.firebaseManager || !window.firebaseManager.initialized) {
+                this.updateFirebaseStatus('❌ Firebase not initialized. Please setup Firebase first.', 'error');
+                return;
+            }
+            
+            await window.firebaseManager.testConnection();
+            this.updateFirebaseStatus('✅ Firebase connection successful!', 'success');
+        } catch (error) {
+            console.error('Firebase connection test failed:', error);
+            this.updateFirebaseStatus(`❌ Firebase connection failed: ${error.message}`, 'error');
+        }
+    }
+
+    async testFirebaseOperations() {
+        try {
+            this.updateFirebaseStatus('Testing Firebase operations...', 'info');
+            
+            if (!window.firebaseManager?.isAuthenticated()) {
+                this.updateFirebaseStatus('❌ Not authenticated. Please sign in first.', 'error');
+                return;
+            }
+            
+            // Test basic operations
+            const testCar = {
+                name: 'Test Car',
+                brand: 'Test Brand',
+                series: 'Test Series',
+                year: '2025',
+                color: 'Red',
+                condition: 'Mint',
+                purchasePrice: 1.99
+            };
+            
+            // Add test car
+            const addedCar = await window.firebaseManager.addCar(testCar);
+            
+            // Update test car
+            await window.firebaseManager.updateCar(addedCar.id, { color: 'Blue' });
+            
+            // Delete test car
+            await window.firebaseManager.deleteCar(addedCar.id);
+            
+            this.updateFirebaseStatus('✅ Firebase operations test passed! All CRUD operations work correctly.', 'success');
+        } catch (error) {
+            console.error('Firebase operations test failed:', error);
+            this.updateFirebaseStatus(`❌ Firebase operations test failed: ${error.message}`, 'error');
+        }
+    }
+
+    updateFirebaseStatus(message, type) {
+        const statusDiv = document.getElementById('firebaseStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i> ${message}`;
+        statusDiv.className = `status-message ${type}`;
     }
 }
 
