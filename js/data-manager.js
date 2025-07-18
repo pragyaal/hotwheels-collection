@@ -236,14 +236,30 @@ class DataManager {
 
     // Delete car
     async deleteCar(id) {
+        console.log(`Attempting to delete car with ID: ${id}`);
+        console.log('Git storage status:', this.useGitStorage ? 'Active' : 'Inactive');
+        
         const index = this.cars.findIndex(car => car.id === parseInt(id));
         if (index !== -1) {
             const deletedCar = this.cars[index];
+            console.log(`Found car to delete: ${deletedCar.name}`);
             this.cars.splice(index, 1);
             
             try {
+                console.log('Calling saveCars after deletion...');
                 await this.saveCars();
-                console.log(`Car "${deletedCar.name}" deleted successfully`);
+                
+                // Also delete the associated image if using Git storage
+                if (this.useGitStorage && window.gitStorage?.isConfigured && deletedCar.image) {
+                    try {
+                        console.log('Attempting to delete associated image:', deletedCar.image);
+                        await window.gitStorage.deleteImage(deletedCar.image);
+                    } catch (imageError) {
+                        console.warn('Failed to delete image, but car deletion will continue:', imageError);
+                    }
+                }
+                
+                console.log(`Car "${deletedCar.name}" deleted successfully and saved`);
                 return true;
             } catch (error) {
                 // Restore the car if save failed
@@ -252,6 +268,7 @@ class DataManager {
                 throw error;
             }
         }
+        console.log(`Car with ID ${id} not found`);
         return false;
     }
 
@@ -595,6 +612,25 @@ class DataManager {
             return "Cars are permanently saved to your private GitHub repository. All data persists across devices and sessions.";
         } else {
             return "Cars are saved to your browser's local storage and will persist while using this site. For permanent backup, download the generated data files from the Settings tab.";
+        }
+    }
+
+    // Force reload data from Git repository (for debugging)
+    async forceReloadFromGit() {
+        if (this.useGitStorage && window.gitStorage?.isConfigured) {
+            try {
+                console.log('Force reloading data from Git repository...');
+                this.cars = await window.gitStorage.loadCars();
+                this.wishlist = await window.gitStorage.loadWishlist();
+                console.log('Data reloaded from Git - Cars:', this.cars.length, 'Wishlist:', this.wishlist.length);
+                return true;
+            } catch (error) {
+                console.error('Failed to reload from Git:', error);
+                return false;
+            }
+        } else {
+            console.log('Git storage not active, cannot reload from Git');
+            return false;
         }
     }
 }

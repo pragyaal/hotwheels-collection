@@ -1028,6 +1028,70 @@ This action cannot be undone.`;
         // Default to local path
         return imagePath;
     }
+
+    async testDeletion() {
+        try {
+            this.updateGitStorageStatus('Testing deletion functionality...', 'info');
+            
+            if (!window.gitStorage || !window.gitStorage.isConfigured) {
+                this.updateGitStorageStatus('❌ Git storage not configured. Please set up Git storage first.', 'error');
+                return;
+            }
+            
+            console.log('Starting deletion test...');
+            
+            // First, get current cars data
+            const currentCars = window.dataManager.getCars();
+            console.log('Current cars before deletion test:', currentCars.length);
+            
+            if (currentCars.length === 0) {
+                this.updateGitStorageStatus('❌ No cars to test deletion with. Add a car first.', 'error');
+                return;
+            }
+            
+            // Get the first car for testing
+            const testCar = currentCars[0];
+            console.log('Testing deletion of car:', testCar.name, 'ID:', testCar.id);
+            
+            // Test deletion
+            const deleteResult = await window.dataManager.deleteCar(testCar.id);
+            console.log('Deletion result:', deleteResult);
+            
+            if (deleteResult) {
+                // Check if car was actually removed from data
+                const carsAfterDeletion = window.dataManager.getCars();
+                console.log('Cars after deletion:', carsAfterDeletion.length);
+                
+                const carStillExists = carsAfterDeletion.find(car => car.id === testCar.id);
+                if (carStillExists) {
+                    this.updateGitStorageStatus('❌ Deletion test failed: Car still exists in memory', 'error');
+                } else {
+                    // Now check if it was saved to Git
+                    try {
+                        console.log('Forcing reload from Git to verify deletion...');
+                        await window.dataManager.forceReloadFromGit();
+                        const carsFromGit = window.dataManager.getCars();
+                        const carExistsInGit = carsFromGit.find(car => car.id === testCar.id);
+                        
+                        if (carExistsInGit) {
+                            this.updateGitStorageStatus('❌ Deletion test failed: Car still exists in Git repository', 'error');
+                        } else {
+                            this.updateGitStorageStatus(`✅ Deletion test successful! Car "${testCar.name}" was deleted from both memory and Git repository`, 'success');
+                        }
+                    } catch (gitError) {
+                        console.error('Failed to reload from Git:', gitError);
+                        this.updateGitStorageStatus(`⚠️ Deletion from memory successful, but couldn't verify Git deletion: ${gitError.message}`, 'warning');
+                    }
+                }
+            } else {
+                this.updateGitStorageStatus('❌ Deletion test failed: deleteCar returned false', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Deletion test error:', error);
+            this.updateGitStorageStatus(`❌ Deletion test error: ${error.message}`, 'error');
+        }
+    }
 }
 
 // Initialize admin panel when DOM is loaded

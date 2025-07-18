@@ -243,20 +243,24 @@ class GitStorageManager {
     // Save cars to Git repository
     async saveCars(cars) {
         try {
+            console.log(`gitStorage.saveCars: Saving ${cars.length} cars to Git repository`);
             const data = {
                 cars,
                 lastUpdated: new Date().toISOString()
             };
             
-            await this.saveFile(
+            console.log('gitStorage.saveCars: Preparing to save data:', JSON.stringify(data, null, 2).substring(0, 200) + '...');
+            
+            const result = await this.saveFile(
                 'data/cars.json',
                 data,
                 `Update cars collection - ${new Date().toLocaleString()}`
             );
             
+            console.log('gitStorage.saveCars: Save operation completed successfully', result);
             return true;
         } catch (error) {
-            console.error('Failed to save cars to Git:', error);
+            console.error('gitStorage.saveCars: Failed to save cars to Git:', error);
             throw error;
         }
     }
@@ -570,6 +574,38 @@ Images are automatically named with the pattern:
         } catch (error) {
             console.error('Test image upload failed:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    // Delete image file from repository
+    async deleteImage(imagePath) {
+        try {
+            if (!imagePath || !imagePath.startsWith('images/cars/')) {
+                console.log('No image to delete or invalid path:', imagePath);
+                return true; // Not an error, just no image to delete
+            }
+
+            console.log(`Attempting to delete image: ${imagePath}`);
+            
+            // Get the current file to get its SHA
+            const existing = await this.getBinaryFile(imagePath);
+            if (!existing.sha) {
+                console.log('Image file not found in repository:', imagePath);
+                return true; // File doesn't exist, which is fine
+            }
+
+            // Delete the file
+            await this.githubAPI(`contents/${imagePath}`, 'DELETE', {
+                message: `Delete image: ${imagePath}`,
+                sha: existing.sha
+            });
+
+            console.log(`Image deleted successfully: ${imagePath}`);
+            return true;
+        } catch (error) {
+            console.error('Failed to delete image:', error);
+            // Don't throw error for image deletion failures, just log them
+            return false;
         }
     }
 }
