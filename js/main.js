@@ -19,18 +19,6 @@ class CollectionView {
             await window.dataManager.initPromise;
         }
 
-        console.log('Data manager loaded, cars:', window.dataManager.cars.length);
-        
-        // Debug: Log car images
-        if (window.dataManager.cars.length > 0) {
-            console.log('Car images:', window.dataManager.cars.map(car => ({
-                name: car.name,
-                image: car.image
-            })));
-        } else {
-            console.log('No cars found in collection');
-        }
-
         this.setupEventListeners();
         this.populateFilters();
         this.updateStatistics();
@@ -216,8 +204,6 @@ class CollectionView {
         const filteredCars = window.dataManager.searchCars(this.currentQuery, this.currentFilters);
         const sortedCars = window.dataManager.sortCars(filteredCars, this.currentSort);
 
-        console.log('displayCars: Total cars:', window.dataManager.cars.length, 'Filtered:', filteredCars.length, 'Sorted:', sortedCars.length);
-
         // Show/hide views
         const gridContainer = document.getElementById('carsGrid');
         const tableContainer = document.getElementById('carsTable');
@@ -273,8 +259,7 @@ class CollectionView {
         container.innerHTML = cars.map(car => `
             <div class="car-card" onclick="collectionView.showCarDetails(${car.id})">
                 <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="car-image" 
-                     onerror="window.collectionView.handleImageError(this, '${car.name}');"
-                     onload="console.log('Image loaded successfully:', this.src);">
+                     onerror="window.collectionView.handleImageError(this, '${car.name}');">
                 <div class="car-info">
                     <h3 class="car-name">${car.name}</h3>
                     <p class="car-brand">${car.brand}</p>
@@ -394,8 +379,6 @@ class CollectionView {
     }
 
     getImageUrl(imagePath) {
-        console.log('getImageUrl called with:', imagePath);
-        
         // If no image path provided, return placeholder
         if (!imagePath) {
             return 'images/placeholder-car.svg';
@@ -410,15 +393,13 @@ class CollectionView {
         const gitStorageActive = window.dataManager && window.dataManager.isGitStorageActive();
         const gitConfigured = window.gitStorage && window.gitStorage.isConfigured;
         
-        console.log('Git storage active:', gitStorageActive, 'Git configured:', gitConfigured);
-        
         // If using Git storage and the image is in the repository, construct GitHub raw URL
         if (gitStorageActive && gitConfigured && imagePath.startsWith('images/cars/')) {
             try {
-                const { repoOwner, repoName } = window.gitStorage.config;
+                const repoOwner = window.gitStorage.repoOwner;
+                const repoName = window.gitStorage.repoName;
                 if (repoOwner && repoName) {
                     const gitUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
-                    console.log('Constructed Git URL:', gitUrl);
                     return gitUrl;
                 }
             } catch (error) {
@@ -428,7 +409,6 @@ class CollectionView {
         
         // For local images, ensure proper relative path
         const localPath = imagePath.startsWith('./') ? imagePath : `./${imagePath}`;
-        console.log('Using local path:', localPath);
         return localPath;
     }
 
@@ -442,13 +422,9 @@ class CollectionView {
         this.populateFilters();
         this.updateStatistics();
         this.displayCars();
-        
-        console.log('Data refreshed - found', window.dataManager.cars.length, 'cars');
     }
 
     handleImageError(imgElement, carName) {
-        console.log(`Image failed to load for ${carName}:`, imgElement.src);
-        
         // Try different fallback paths for the placeholder
         const fallbacks = [
             './images/placeholder-car.svg',

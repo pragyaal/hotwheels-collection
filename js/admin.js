@@ -943,8 +943,6 @@ This action cannot be undone.`;
     }
 
     getImageUrl(imagePath) {
-        console.log('Admin getImageUrl called with:', imagePath);
-        
         // If no image path provided, return placeholder
         if (!imagePath) {
             return 'images/placeholder-car.svg';
@@ -967,10 +965,10 @@ This action cannot be undone.`;
         // If using Git storage and the image is in the repository, construct GitHub raw URL
         if (gitStorageActive && gitConfigured && imagePath.startsWith('images/cars/')) {
             try {
-                const { repoOwner, repoName } = window.gitStorage.config;
+                const repoOwner = window.gitStorage.repoOwner;
+                const repoName = window.gitStorage.repoName;
                 if (repoOwner && repoName) {
                     const gitUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
-                    console.log('Admin constructed Git URL:', gitUrl);
                     return gitUrl;
                 }
             } catch (error) {
