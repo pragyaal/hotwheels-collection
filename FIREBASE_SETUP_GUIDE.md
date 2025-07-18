@@ -126,7 +126,8 @@ Copy each value from your Firebase config:
 4. **Storage Bucket**:
    - Copy the `storageBucket` value
    - Paste into "Storage Bucket" field
-   - Example: `hotwheels-collection-xxxxx.appspot.com`
+   - Example: `hotwheels-collection-xxxxx.appspot.com` (older projects)
+   - Example: `hotwheels-collection-xxxxx.firebasestorage.app` (newer projects)
 
 5. **Messaging Sender ID**:
    - Copy the `messagingSenderId` value (numbers only)
@@ -296,8 +297,8 @@ users/
 - Format: `your-project-id.firebaseapp.com`
 
 **Storage Bucket Issues**:
-- Must end with `.appspot.com`
-- Format: `your-project-id.appspot.com`
+- Must end with `.appspot.com` (older projects) or `.firebasestorage.app` (newer projects)
+- Format: `your-project-id.appspot.com` or `your-project-id.firebasestorage.app`
 
 **Messaging Sender ID Issues**:
 - Must be numeric only

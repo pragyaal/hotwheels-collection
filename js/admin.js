@@ -176,12 +176,6 @@ class AdminPanel {
     }
 
     async checkAuthStatus() {
-        // FORCE SETUP SCREEN - TEMPORARY DEBUG
-        console.log('=== FORCING SETUP SCREEN FOR DEBUGGING ===');
-        console.log('Config:', window.dataManager?.config);
-        this.showSetupInstructions();
-        return;
-        
         const isAuthenticated = sessionStorage.getItem('adminAuth') === 'true';
         
         console.log('=== ADMIN AUTH DEBUG ===');
@@ -1332,8 +1326,8 @@ This action cannot be undone.`;
             errors.push('Auth Domain should end with .firebaseapp.com');
         }
         
-        if (!config.storageBucket || !config.storageBucket.includes('.appspot.com')) {
-            errors.push('Storage Bucket should end with .appspot.com');
+        if (!config.storageBucket || (!config.storageBucket.includes('.appspot.com') && !config.storageBucket.includes('.firebasestorage.app'))) {
+            errors.push('Storage Bucket should end with .appspot.com or .firebasestorage.app');
         }
         
         if (!config.messagingSenderId || !/^\d+$/.test(config.messagingSenderId)) {
