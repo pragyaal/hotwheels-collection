@@ -7,10 +7,15 @@ class AdminPanel {
     }
 
     async init() {
-        // Wait for data manager to load
+        // Wait for data manager to load and initialize
         while (!window.dataManager) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
+        
+        // Wait for data manager to be fully initialized
+        await window.dataManager.initPromise;
+        
+        console.log('Data manager initialized, config loaded:', window.dataManager.config);
 
         this.setupEventListeners();
         this.checkAuthStatus();
@@ -184,6 +189,12 @@ class AdminPanel {
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('loginError');
         
+        console.log('Login attempt with config:', {
+            setupRequired: window.dataManager.config.setupRequired,
+            hasPassword: !!window.dataManager.config.adminPassword,
+            adminPassword: window.dataManager.config.adminPassword
+        });
+        
         // Check if setup is required (no password set)
         if (window.dataManager.config.setupRequired && !window.dataManager.config.adminPassword) {
             // First time setup - any password will work, then gets encrypted and stored
@@ -207,17 +218,21 @@ class AdminPanel {
         
         // Normal login process - validate against stored password
         if (!window.dataManager.config.adminPassword) {
+            console.error('Admin password not found in config:', window.dataManager.config);
             errorDiv.textContent = 'Admin password not set. Please contact administrator.';
             errorDiv.style.display = 'block';
             document.getElementById('password').value = '';
             return;
         }
         
+        console.log('Validating password...');
         if (window.dataManager.validatePassword(password)) {
+            console.log('Password validation successful');
             sessionStorage.setItem('adminAuth', 'true');
             this.showAdminPanel();
             errorDiv.style.display = 'none';
         } else {
+            console.log('Password validation failed');
             errorDiv.textContent = 'Invalid password. Please try again.';
             errorDiv.style.display = 'block';
             document.getElementById('password').value = '';

@@ -639,6 +639,15 @@ class DataManager {
         }
         return 'Using Local Storage (Offline Mode)';
     }
+
+    validatePassword(password) {
+        if (!this.config.adminPassword) {
+            return false;
+        }
+        
+        const hashedInput = this.encrypt(password);
+        return hashedInput === this.config.adminPassword;
+    }
 }
 
 // Initialize data manager
