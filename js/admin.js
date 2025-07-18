@@ -187,25 +187,38 @@ class AdminPanel {
     }
 
     async checkPasswordSetup() {
-        // Check local config first
-        const hasLocalPassword = window.dataManager.config.adminPassword;
+        // Check local config first - only consider it set if it's not empty
+        const hasLocalPassword = window.dataManager.config.adminPassword && 
+                                window.dataManager.config.adminPassword.trim() !== '';
         let hasFirebasePassword = false;
+
+        console.log('Checking password setup:');
+        console.log('- Local password:', hasLocalPassword ? '[SET]' : '[NOT SET]');
+        console.log('- Raw adminPassword value:', JSON.stringify(window.dataManager.config.adminPassword));
+        console.log('- Config object:', window.dataManager.config);
 
         // Check Firebase if available
         if (window.firebaseManager && window.firebaseManager.isConfigured() && window.firebaseManager.isAuthenticated()) {
             try {
                 const settings = await window.firebaseManager.getUserSettings();
-                hasFirebasePassword = !!settings.adminPassword;
+                hasFirebasePassword = !!(settings.adminPassword && settings.adminPassword.trim() !== '');
+                console.log('- Firebase password:', hasFirebasePassword ? '[SET]' : '[NOT SET]');
             } catch (error) {
                 console.log('Could not check Firebase password:', error);
             }
+        } else {
+            console.log('- Firebase not available or not authenticated');
         }
+
+        console.log('Final decision: hasLocalPassword =', hasLocalPassword, ', hasFirebasePassword =', hasFirebasePassword);
 
         if (hasLocalPassword || hasFirebasePassword) {
             // Password is configured, show normal login
+            console.log('Showing login form (password found)');
             this.showLoginForm();
         } else {
             // No password configured, show setup instructions
+            console.log('Showing setup instructions (no password found)');
             this.showSetupInstructions();
         }
     }
@@ -1487,6 +1500,15 @@ This action cannot be undone.`;
                 statusDiv.style.display = 'none';
             }, 10000);
         }
+    }
+
+    // Debug utility for clearing localStorage
+    clearLocalStorage() {
+        console.log('Clearing localStorage and sessionStorage...');
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('Storage cleared. Refreshing page...');
+        window.location.reload();
     }
 }
 

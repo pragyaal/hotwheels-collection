@@ -219,8 +219,10 @@ class DataManager {
                 const stored = localStorage.getItem('app_config');
                 if (stored) {
                     this.config = JSON.parse(stored);
-                    // Ensure adminPassword comes from local config
-                    this.config.adminPassword = localConfig.adminPassword || this.config.adminPassword || '';
+                    // Ensure adminPassword comes from local config, but only if it's not empty
+                    const localAdminPassword = localConfig.adminPassword && localConfig.adminPassword.trim() !== '' ? localConfig.adminPassword : undefined;
+                    const storedAdminPassword = this.config.adminPassword && this.config.adminPassword.trim() !== '' ? this.config.adminPassword : undefined;
+                    this.config.adminPassword = localAdminPassword || storedAdminPassword || '';
                 } else {
                     // Set defaults if not found
                     this.config = {
