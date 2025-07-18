@@ -29,7 +29,7 @@ class DataManager {
         await this.loadWishlist();
         
         this.initialized = true;
-        console.log('DataManager initialization complete');
+        console.log('DataManager initialization complete. Cars:', this.cars.length, 'Wishlist:', this.wishlist.length);
     }
 
     // Simple encryption/decryption for password

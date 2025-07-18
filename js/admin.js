@@ -781,7 +781,7 @@ This action cannot be undone.`;
             // Test connection and setup
             this.testGitConnection().then(success => {
                 if (success) {
-                    // Update data manager to use Git storage
+                    // Force data manager to use Git storage
                     window.dataManager.useGitStorage = true;
                     console.log('Data manager updated to use Git storage:', window.dataManager.useGitStorage);
                     
@@ -795,13 +795,6 @@ This action cannot be undone.`;
                     
                     // Clear the form for security
                     document.getElementById('gitAccessToken').value = '';
-                    
-                    // Suggest page reload for full Git storage activation
-                    setTimeout(() => {
-                        if (confirm('Git storage is now configured! Would you like to reload the page to ensure all features are properly connected to your repository?')) {
-                            window.location.reload();
-                        }
-                    }, 2000);
                 }
             }).catch(error => {
                 this.showMessage(`Git setup failed: ${error.message}`, 'error');
@@ -831,6 +824,26 @@ This action cannot be undone.`;
             console.error('Git connection test error:', error);
             this.updateGitStorageStatus(error.message, 'error');
             return false;
+        }
+    }
+
+    async testGitOperations() {
+        try {
+            this.updateGitStorageStatus('Testing Git operations...', 'info');
+            
+            if (!window.gitStorage.isConfigured) {
+                this.updateGitStorageStatus('Git storage not configured. Please set up first.', 'error');
+                return;
+            }
+            
+            const success = await window.gitStorage.testGitStorageOperations();
+            if (success) {
+                this.updateGitStorageStatus('Git operations test passed! Check your repository.', 'success');
+            } else {
+                this.updateGitStorageStatus('Git operations test failed. Check console for details.', 'error');
+            }
+        } catch (error) {
+            this.updateGitStorageStatus(`Git operations test error: ${error.message}`, 'error');
         }
     }
 
