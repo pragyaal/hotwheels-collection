@@ -20,6 +20,16 @@ class CollectionView {
         }
 
         console.log('Data manager loaded, cars:', window.dataManager.cars.length);
+        
+        // Debug: Log car images
+        if (window.dataManager.cars.length > 0) {
+            console.log('Car images:', window.dataManager.cars.map(car => ({
+                name: car.name,
+                image: car.image
+            })));
+        } else {
+            console.log('No cars found in collection');
+        }
 
         this.setupEventListeners();
         this.populateFilters();
@@ -206,6 +216,8 @@ class CollectionView {
         const filteredCars = window.dataManager.searchCars(this.currentQuery, this.currentFilters);
         const sortedCars = window.dataManager.sortCars(filteredCars, this.currentSort);
 
+        console.log('displayCars: Total cars:', window.dataManager.cars.length, 'Filtered:', filteredCars.length, 'Sorted:', sortedCars.length);
+
         // Show/hide views
         const gridContainer = document.getElementById('carsGrid');
         const tableContainer = document.getElementById('carsTable');
@@ -261,7 +273,8 @@ class CollectionView {
         container.innerHTML = cars.map(car => `
             <div class="car-card" onclick="collectionView.showCarDetails(${car.id})">
                 <img src="${this.getImageUrl(car.image)}" alt="${car.name}" class="car-image" 
-                     onerror="this.src='images/placeholder-car.svg'">
+                     onerror="window.collectionView.handleImageError(this, '${car.name}');"
+                     onload="console.log('Image loaded successfully:', this.src);">
                 <div class="car-info">
                     <h3 class="car-name">${car.name}</h3>
                     <p class="car-brand">${car.brand}</p>
@@ -381,21 +394,42 @@ class CollectionView {
     }
 
     getImageUrl(imagePath) {
+        console.log('getImageUrl called with:', imagePath);
+        
+        // If no image path provided, return placeholder
+        if (!imagePath) {
+            return 'images/placeholder-car.svg';
+        }
+        
         // If it's already a full URL, return as is
-        if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
             return imagePath;
         }
         
+        // Check if Git storage is configured and active
+        const gitStorageActive = window.dataManager && window.dataManager.isGitStorageActive();
+        const gitConfigured = window.gitStorage && window.gitStorage.isConfigured;
+        
+        console.log('Git storage active:', gitStorageActive, 'Git configured:', gitConfigured);
+        
         // If using Git storage and the image is in the repository, construct GitHub raw URL
-        if (window.dataManager && window.dataManager.isGitStorageActive() && window.gitStorage && window.gitStorage.isConfigured) {
-            if (imagePath && imagePath.startsWith('images/cars/')) {
+        if (gitStorageActive && gitConfigured && imagePath.startsWith('images/cars/')) {
+            try {
                 const { repoOwner, repoName } = window.gitStorage.config;
-                return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+                if (repoOwner && repoName) {
+                    const gitUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+                    console.log('Constructed Git URL:', gitUrl);
+                    return gitUrl;
+                }
+            } catch (error) {
+                console.error('Error accessing Git config:', error);
             }
         }
         
-        // Default to local path
-        return imagePath || 'images/placeholder-car.svg';
+        // For local images, ensure proper relative path
+        const localPath = imagePath.startsWith('./') ? imagePath : `./${imagePath}`;
+        console.log('Using local path:', localPath);
+        return localPath;
     }
 
     async refreshData() {
@@ -410,6 +444,33 @@ class CollectionView {
         this.displayCars();
         
         console.log('Data refreshed - found', window.dataManager.cars.length, 'cars');
+    }
+
+    handleImageError(imgElement, carName) {
+        console.log(`Image failed to load for ${carName}:`, imgElement.src);
+        
+        // Try different fallback paths for the placeholder
+        const fallbacks = [
+            './images/placeholder-car.svg',
+            'images/placeholder-car.svg',
+            // Use the actual SVG content as data URL (embedded placeholder)
+            'data:image/svg+xml;charset=utf-8,<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23667eea;stop-opacity:0.1" /><stop offset="100%" style="stop-color:%23764ba2;stop-opacity:0.1" /></linearGradient></defs><rect width="100%" height="100%" fill="url(%23bg)"/><circle cx="200" cy="120" r="40" fill="%23667eea" opacity="0.3"/><rect x="150" y="140" width="100" height="20" rx="10" fill="%23667eea" opacity="0.5"/><rect x="170" y="170" width="20" height="40" rx="10" fill="%23667eea" opacity="0.4"/><rect x="210" y="170" width="20" height="40" rx="10" fill="%23667eea" opacity="0.4"/><text x="200" y="230" font-family="Arial" font-size="14" fill="%23667eea" text-anchor="middle">Hot Wheels</text></svg>'
+        ];
+        
+        let currentIndex = 0;
+        const tryNext = () => {
+            if (currentIndex < fallbacks.length) {
+                const nextSrc = fallbacks[currentIndex++];
+                console.log(`Trying fallback ${currentIndex}:`, nextSrc);
+                imgElement.onerror = currentIndex < fallbacks.length ? tryNext : () => {
+                    console.log('All image fallbacks failed, removing error handler');
+                    imgElement.onerror = null;
+                };
+                imgElement.src = nextSrc;
+            }
+        };
+        
+        tryNext();
     }
 
 }

@@ -943,21 +943,43 @@ This action cannot be undone.`;
     }
 
     getImageUrl(imagePath) {
+        console.log('Admin getImageUrl called with:', imagePath);
+        
+        // If no image path provided, return placeholder
+        if (!imagePath) {
+            return 'images/placeholder-car.svg';
+        }
+        
         // If it's already a full URL, return as is
-        if (imagePath && (imagePath.startsWith('http://') || imagePath.startsWith('https://'))) {
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
             return imagePath;
         }
         
+        // If it's a placeholder, return as is
+        if (imagePath === 'images/placeholder-car.svg') {
+            return imagePath;
+        }
+        
+        // Check if Git storage is configured and active
+        const gitStorageActive = window.dataManager && window.dataManager.isGitStorageActive();
+        const gitConfigured = window.gitStorage && window.gitStorage.isConfigured;
+        
         // If using Git storage and the image is in the repository, construct GitHub raw URL
-        if (window.dataManager && window.dataManager.isGitStorageActive() && window.gitStorage && window.gitStorage.isConfigured) {
-            if (imagePath && imagePath.startsWith('images/cars/')) {
+        if (gitStorageActive && gitConfigured && imagePath.startsWith('images/cars/')) {
+            try {
                 const { repoOwner, repoName } = window.gitStorage.config;
-                return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+                if (repoOwner && repoName) {
+                    const gitUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${imagePath}`;
+                    console.log('Admin constructed Git URL:', gitUrl);
+                    return gitUrl;
+                }
+            } catch (error) {
+                console.error('Admin error accessing Git config:', error);
             }
         }
         
         // Default to local path
-        return imagePath || 'images/placeholder-car.svg';
+        return imagePath;
     }
 }
 
