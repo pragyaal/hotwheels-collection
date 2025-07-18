@@ -185,7 +185,7 @@ class AdminPanel {
         }
     }
 
-    handleLogin() {
+    async handleLogin() {
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('loginError');
         
@@ -217,23 +217,58 @@ class AdminPanel {
         }
         
         // Normal login process - validate against stored password
+        // Check if password is set
         if (!window.dataManager.config.adminPassword) {
-            console.error('Admin password not found in config:', window.dataManager.config);
-            errorDiv.textContent = 'Admin password not set. Please contact administrator.';
-            errorDiv.style.display = 'block';
-            document.getElementById('password').value = '';
-            return;
+            console.log('No admin password set, checking if Firebase is configured...');
+            
+            // Check if Firebase is configured
+            if (!window.firebaseManager || !window.firebaseManager.isConfigured()) {
+                console.log('Firebase not configured, showing setup message');
+                errorDiv.innerHTML = `
+                    <div style="text-align: left;">
+                        <strong>Setup Required:</strong><br>
+                        No admin password is configured. Please set up Firebase first:<br><br>
+                        1. Follow the <strong>Firebase Setup Guide</strong> in the project documentation<br>
+                        2. Configure Firebase credentials<br>
+                        3. Set up admin password through Firebase<br><br>
+                        <small>Or check the FIREBASE_SETUP_GUIDE.md file for detailed instructions.</small>
+                    </div>
+                `;
+                errorDiv.style.display = 'block';
+                document.getElementById('password').value = '';
+                return;
+            } else {
+                // Firebase is configured but no password set
+                errorDiv.innerHTML = `
+                    <div style="text-align: left;">
+                        <strong>Password Setup Required:</strong><br>
+                        Firebase is configured but no admin password is set.<br>
+                        Please use the Firebase console or setup interface to configure your admin password.
+                    </div>
+                `;
+                errorDiv.style.display = 'block';
+                document.getElementById('password').value = '';
+                return;
+            }
         }
         
         console.log('Validating password...');
-        if (window.dataManager.validatePassword(password)) {
-            console.log('Password validation successful');
-            sessionStorage.setItem('adminAuth', 'true');
-            this.showAdminPanel();
-            errorDiv.style.display = 'none';
-        } else {
-            console.log('Password validation failed');
-            errorDiv.textContent = 'Invalid password. Please try again.';
+        try {
+            const isValid = await window.dataManager.validatePassword(password);
+            if (isValid) {
+                console.log('Password validation successful');
+                sessionStorage.setItem('adminAuth', 'true');
+                this.showAdminPanel();
+                errorDiv.style.display = 'none';
+            } else {
+                console.log('Password validation failed');
+                errorDiv.textContent = 'Invalid password. Please try again.';
+                errorDiv.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        } catch (error) {
+            console.error('Error during password validation:', error);
+            errorDiv.textContent = 'Error validating password. Please try again.';
             errorDiv.style.display = 'block';
             document.getElementById('password').value = '';
         }
@@ -1239,6 +1274,116 @@ This action cannot be undone.`;
         statusDiv.style.display = 'block';
         statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i> ${message}`;
         statusDiv.className = `status-message ${type}`;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // Password Setup Methods
+    showPasswordSetup() {
+        const form = document.getElementById('passwordSetupForm');
+        const isVisible = form.style.display !== 'none';
+        form.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible) {
+            document.getElementById('newAdminPassword').focus();
+        }
+    }
+
+    async setupAdminPassword() {
+        const newPassword = document.getElementById('newAdminPassword').value;
+        const confirmPassword = document.getElementById('confirmAdminPassword').value;
+        const statusDiv = document.getElementById('passwordStatus');
+
+        // Validation
+        if (!newPassword || !confirmPassword) {
+            this.updatePasswordStatus('Please fill in both password fields.', 'error');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            this.updatePasswordStatus('Passwords do not match.', 'error');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            this.updatePasswordStatus('Password must be at least 6 characters long.', 'error');
+            return;
+        }
+
+        try {
+            // Check if Firebase is configured and authenticated
+            if (!window.firebaseManager || !window.firebaseManager.isConfigured()) {
+                this.updatePasswordStatus('Please configure Firebase first before setting up admin password.', 'error');
+                return;
+            }
+
+            if (!window.firebaseManager.isAuthenticated()) {
+                this.updatePasswordStatus('Please authenticate with Firebase first.', 'error');
+                return;
+            }
+
+            // Encrypt the password using the same method as local storage
+            const encryptedPassword = window.dataManager.encrypt(newPassword);
+
+            // Save to Firebase user settings
+            const currentSettings = await window.firebaseManager.getUserSettings();
+            await window.firebaseManager.updateUserSettings({
+                ...currentSettings,
+                adminPassword: encryptedPassword
+            });
+
+            // Clear form
+            document.getElementById('newAdminPassword').value = '';
+            document.getElementById('confirmAdminPassword').value = '';
+            document.getElementById('passwordSetupForm').style.display = 'none';
+
+            this.updatePasswordStatus('✅ Admin password has been set successfully! You can now use this password to log in.', 'success');
+            
+        } catch (error) {
+            console.error('Error setting up admin password:', error);
+            this.updatePasswordStatus(`❌ Failed to set admin password: ${error.message}`, 'error');
+        }
+    }
+
+    async changeAdminPassword() {
+        // Same as setupAdminPassword but with additional current password verification
+        const currentPassword = prompt('Enter your current admin password:');
+        if (!currentPassword) return;
+
+        try {
+            // Verify current password
+            const isValid = await window.dataManager.validatePassword(currentPassword);
+            if (!isValid) {
+                this.updatePasswordStatus('Current password is incorrect.', 'error');
+                return;
+            }
+
+            // Show password setup form
+            this.showPasswordSetup();
+            
+        } catch (error) {
+            console.error('Error verifying current password:', error);
+            this.updatePasswordStatus(`❌ Error verifying current password: ${error.message}`, 'error');
+        }
+    }
+
+    updatePasswordStatus(message, type) {
+        const statusDiv = document.getElementById('passwordStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info'}-circle"></i> ${message}`;
+        statusDiv.className = `status-message ${type}`;
+        
+        // Auto-hide success messages after 10 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 10000);
+        }
     }
 }
 

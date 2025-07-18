@@ -195,36 +195,40 @@ class DataManager {
     // Configuration management
     async loadConfig() {
         try {
+            // Always load adminPassword from local config.json file
+            let localConfig = {};
+            try {
+                const response = await fetch('data/config.json');
+                if (response.ok) {
+                    localConfig = await response.json();
+                }
+            } catch (error) {
+                console.log('Config file not found, using defaults');
+            }
+
             if (this.useFirebase && window.firebaseManager?.isAuthenticated()) {
                 const settings = await window.firebaseManager.getUserSettings();
                 this.config = {
-                    siteName: settings.siteName || 'Hot Wheels Collection',
-                    currency: settings.currency || 'INR',
-                    setupRequired: settings.setupRequired || false
+                    siteName: settings.siteName || localConfig.siteName || 'Hot Wheels Collection',
+                    currency: settings.currency || localConfig.currency || 'INR',
+                    setupRequired: settings.setupRequired || localConfig.setupRequired || false,
+                    adminPassword: localConfig.adminPassword || '' // Always use local adminPassword
                 };
             } else {
                 // Load from localStorage or file
                 const stored = localStorage.getItem('app_config');
                 if (stored) {
                     this.config = JSON.parse(stored);
+                    // Ensure adminPassword comes from local config
+                    this.config.adminPassword = localConfig.adminPassword || this.config.adminPassword || '';
                 } else {
-                    // Try to load from file
-                    try {
-                        const response = await fetch('data/config.json');
-                        if (response.ok) {
-                            this.config = await response.json();
-                        }
-                    } catch (error) {
-                        console.log('Config file not found, using defaults');
-                    }
-                    
                     // Set defaults if not found
                     this.config = {
                         siteName: 'Hot Wheels Collection',
                         currency: 'INR',
                         adminPassword: '',
                         setupRequired: true,
-                        ...this.config
+                        ...localConfig
                     };
                 }
             }
@@ -237,6 +241,12 @@ class DataManager {
                 setupRequired: true
             };
         }
+        
+        // Debug logging
+        console.log('Config loaded:', {
+            ...this.config,
+            adminPassword: this.config.adminPassword ? '[SET]' : '[NOT SET]'
+        });
     }
 
     async saveConfig(updates) {
@@ -640,13 +650,27 @@ class DataManager {
         return 'Using Local Storage (Offline Mode)';
     }
 
-    validatePassword(password) {
-        if (!this.config.adminPassword) {
-            return false;
+    async validatePassword(password) {
+        // First try local config (for backward compatibility)
+        if (this.config.adminPassword) {
+            const hashedInput = this.encrypt(password);
+            return hashedInput === this.config.adminPassword;
         }
         
-        const hashedInput = this.encrypt(password);
-        return hashedInput === this.config.adminPassword;
+        // If no local password, try Firebase
+        if (this.useFirebase && window.firebaseManager?.isConfigured()) {
+            try {
+                const firebaseConfig = await window.firebaseManager.getUserSettings();
+                if (firebaseConfig && firebaseConfig.adminPassword) {
+                    const hashedInput = this.encrypt(password);
+                    return hashedInput === firebaseConfig.adminPassword;
+                }
+            } catch (error) {
+                console.error('Error validating password from Firebase:', error);
+            }
+        }
+        
+        return false;
     }
 }
 
