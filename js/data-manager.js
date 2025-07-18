@@ -238,22 +238,34 @@ class DataManager {
     async deleteCar(id) {
         console.log(`Attempting to delete car with ID: ${id}`);
         console.log('Git storage status:', this.useGitStorage ? 'Active' : 'Inactive');
+        console.log('Git storage configured:', window.gitStorage?.isConfigured);
         
         const index = this.cars.findIndex(car => car.id === parseInt(id));
         if (index !== -1) {
             const deletedCar = this.cars[index];
             console.log(`Found car to delete: ${deletedCar.name}`);
+            
+            // Make a backup of the car in case we need to restore it
+            const carBackup = { ...deletedCar };
+            
+            // Remove from memory first
             this.cars.splice(index, 1);
+            console.log(`Cars after removal: ${this.cars.length}`);
             
             try {
                 console.log('Calling saveCars after deletion...');
+                console.log('Current useGitStorage:', this.useGitStorage);
+                console.log('Git storage isConfigured:', window.gitStorage?.isConfigured);
+                
                 await this.saveCars();
+                console.log('saveCars completed successfully after deletion');
                 
                 // Also delete the associated image if using Git storage
                 if (this.useGitStorage && window.gitStorage?.isConfigured && deletedCar.image) {
                     try {
                         console.log('Attempting to delete associated image:', deletedCar.image);
                         await window.gitStorage.deleteImage(deletedCar.image);
+                        console.log('Image deletion completed');
                     } catch (imageError) {
                         console.warn('Failed to delete image, but car deletion will continue:', imageError);
                     }
@@ -263,8 +275,9 @@ class DataManager {
                 return true;
             } catch (error) {
                 // Restore the car if save failed
-                this.cars.splice(index, 0, deletedCar);
-                console.error('Failed to save after deleting car:', error);
+                console.error('Failed to save after deleting car, restoring car:', error);
+                this.cars.splice(index, 0, carBackup);
+                console.log(`Cars after restoration: ${this.cars.length}`);
                 throw error;
             }
         }
@@ -455,15 +468,20 @@ class DataManager {
 
     // Data persistence
     async saveCars() {
-        console.log('saveCars called, useGitStorage:', this.useGitStorage);
+        console.log('=== saveCars called ===');
+        console.log('useGitStorage:', this.useGitStorage);
         console.log('Git storage configured:', window.gitStorage?.isConfigured);
+        console.log('Cars to save:', this.cars.length);
         
         // Check if Git storage is properly configured
         if (this.useGitStorage && window.gitStorage?.isConfigured) {
             try {
                 console.log('Attempting to save cars to Git repository...');
-                await window.gitStorage.saveCars(this.cars);
-                console.log('Cars saved to Git repository');
+                console.log('First few cars:', this.cars.slice(0, 2).map(car => ({ id: car.id, name: car.name })));
+                
+                const result = await window.gitStorage.saveCars(this.cars);
+                console.log('Git save result:', result);
+                console.log('Cars saved to Git repository successfully');
                 
                 // Also save to localStorage as backup
                 const data = {
@@ -471,9 +489,14 @@ class DataManager {
                     lastUpdated: new Date().toISOString()
                 };
                 localStorage.setItem('hotwheels_cars', JSON.stringify(data));
+                console.log('Cars also saved to localStorage as backup');
                 return;
             } catch (error) {
                 console.error('Failed to save cars to Git storage:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack
+                });
                 throw error;
             }
         }
@@ -488,6 +511,7 @@ class DataManager {
         localStorage.setItem('hotwheels_cars', JSON.stringify(data));
         this.createDownloadableFile('cars.json', data);
         console.log('Cars saved to localStorage and download created');
+        console.log('=== saveCars completed ===');
     }
 
     async saveWishlist() {
