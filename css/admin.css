@@ -415,6 +415,30 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Info Panel */
+.info-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.info-panel i {
+    font-size: 1.2rem;
+    margin-top: 0.1rem;
+    opacity: 0.9;
+}
+
+.info-panel strong {
+    font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-header {

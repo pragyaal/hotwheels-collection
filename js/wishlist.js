@@ -61,7 +61,7 @@ class WishlistView {
         }
 
         if (expectedCostElement) {
-            expectedCostElement.textContent = `$${expectedCost.toFixed(2)}`;
+            expectedCostElement.textContent = window.dataManager.formatCurrency(expectedCost);
         }
     }
 
@@ -156,7 +156,7 @@ class WishlistView {
                         ${expectedPrice > 0 ? `
                             <div class="wishlist-detail">
                                 <span class="detail-label">Expected Price:</span>
-                                <span class="detail-value wishlist-price">$${expectedPrice.toFixed(2)}</span>
+                                <span class="detail-value wishlist-price">${window.dataManager.formatCurrency(expectedPrice)}</span>
                             </div>
                         ` : ''}
                         <div class="wishlist-detail">

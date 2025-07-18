@@ -44,7 +44,7 @@ class DataManager {
                 this.config = {
                     adminPassword: this.encrypt('hotwheels123'), // Default password: hotwheels123
                     siteName: 'Hot Wheels Collection',
-                    currency: 'USD'
+                    currency: 'INR'
                 };
             }
         } catch (error) {
@@ -52,7 +52,7 @@ class DataManager {
             this.config = {
                 adminPassword: this.encrypt('hotwheels123'),
                 siteName: 'Hot Wheels Collection',
-                currency: 'USD'
+                currency: 'INR'
             };
         }
     }
@@ -60,62 +60,83 @@ class DataManager {
     // Car data management
     async loadCars() {
         try {
-            const response = await fetch('data/cars.json');
-            if (response.ok) {
-                const data = await response.json();
-                this.cars = data.cars || [];
-            } else {
-                // Initialize with sample data if no file exists
-                this.cars = [
-                    {
-                        id: 1,
-                        name: 'Lamborghini Huracán',
-                        brand: 'Hot Wheels',
-                        series: 'Exotics',
-                        year: '2023',
-                        color: 'Orange',
-                        scale: '1:64',
-                        condition: 'Mint',
-                        purchasePrice: 1.97,
-                        purchaseDate: '2023-06-15',
-                        description: 'Beautiful orange Lamborghini from the Exotics series.',
-                        image: 'images/cars/lambo-huracan.jpg',
-                        dateAdded: new Date().toISOString()
-                    },
-                    {
-                        id: 2,
-                        name: 'Porsche 911 GT3',
-                        brand: 'Hot Wheels',
-                        series: 'Car Culture',
-                        year: '2023',
-                        color: 'White',
-                        scale: '1:64',
-                        condition: 'Mint',
-                        purchasePrice: 5.99,
-                        purchaseDate: '2023-07-20',
-                        description: 'White Porsche 911 GT3 from Car Culture series.',
-                        image: 'images/cars/porsche-911.jpg',
-                        dateAdded: new Date().toISOString()
-                    }
-                ];
+            // First, try to load from the JSON file
+            let fileData = [];
+            try {
+                const response = await fetch('data/cars.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    fileData = data.cars || [];
+                }
+            } catch (error) {
+                console.log('No cars.json file found');
             }
+
+            // Then check localStorage for newer data
+            const localData = localStorage.getItem('hotwheels_cars');
+            if (localData) {
+                try {
+                    const parsedLocal = JSON.parse(localData);
+                    const localCars = parsedLocal.cars || [];
+                    
+                    // Use localStorage data if it exists and has more cars or newer timestamp
+                    if (localCars.length > 0) {
+                        const localUpdated = new Date(parsedLocal.lastUpdated || 0).getTime();
+                        
+                        // Use localStorage data (it represents current session changes)
+                        this.cars = localCars;
+                        console.log('Loaded cars from localStorage:', this.cars.length);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Error parsing localStorage data');
+                }
+            }
+
+            // Fallback to file data or empty array
+            this.cars = fileData;
         } catch (error) {
-            console.log('Cars data file not found, using sample data');
+            console.log('Error loading cars data');
             this.cars = [];
         }
     }
 
     async loadWishlist() {
         try {
-            const response = await fetch('data/wishlist.json');
-            if (response.ok) {
-                const data = await response.json();
-                this.wishlist = data.wishlist || [];
-            } else {
-                this.wishlist = [];
+            // First, try to load from the JSON file
+            let fileData = [];
+            try {
+                const response = await fetch('data/wishlist.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    fileData = data.wishlist || [];
+                }
+            } catch (error) {
+                console.log('No wishlist.json file found');
             }
+
+            // Then check localStorage for newer data
+            const localData = localStorage.getItem('hotwheels_wishlist');
+            if (localData) {
+                try {
+                    const parsedLocal = JSON.parse(localData);
+                    const localWishlist = parsedLocal.wishlist || [];
+                    
+                    // Use localStorage data if it exists
+                    if (localWishlist.length > 0) {
+                        this.wishlist = localWishlist;
+                        console.log('Loaded wishlist from localStorage:', this.wishlist.length);
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Error parsing localStorage wishlist data');
+                }
+            }
+
+            // Fallback to file data or empty array
+            this.wishlist = fileData;
         } catch (error) {
-            console.log('Wishlist file not found, starting empty');
+            console.log('Error loading wishlist data');
             this.wishlist = [];
         }
     }
@@ -312,6 +333,29 @@ class DataManager {
         return password === storedPassword;
     }
 
+    // Currency formatting helper
+    formatCurrency(amount) {
+        const currency = this.config.currency || 'INR';
+        const formattedAmount = parseFloat(amount || 0).toFixed(2);
+        
+        switch (currency) {
+            case 'INR':
+                return `₹${formattedAmount}`;
+            case 'USD':
+                return `$${formattedAmount}`;
+            case 'EUR':
+                return `€${formattedAmount}`;
+            case 'GBP':
+                return `£${formattedAmount}`;
+            case 'CAD':
+                return `C$${formattedAmount}`;
+            case 'AUD':
+                return `A$${formattedAmount}`;
+            default:
+                return `${currency} ${formattedAmount}`;
+        }
+    }
+
     // Data persistence (simulated - in real implementation, this would save to server)
     saveCars() {
         const data = {
@@ -319,12 +363,13 @@ class DataManager {
             lastUpdated: new Date().toISOString()
         };
         
-        // In a real implementation, this would send data to server
-        // For now, we'll store in localStorage as a backup
+        // Store in localStorage for session persistence
         localStorage.setItem('hotwheels_cars', JSON.stringify(data));
         
-        // Create downloadable JSON file
+        // Create downloadable JSON file for permanent storage
         this.createDownloadableFile('cars.json', data);
+        
+        console.log('Cars saved to localStorage and download created');
     }
 
     saveWishlist() {

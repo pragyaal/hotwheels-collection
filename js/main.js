@@ -18,6 +18,20 @@ class CollectionView {
         this.populateFilters();
         this.updateStatistics();
         this.displayCars();
+        
+        // Listen for data updates from admin panel
+        window.addEventListener('dataUpdated', (event) => {
+            if (event.detail.type === 'cars') {
+                this.refreshData();
+            }
+        });
+        
+        // Also listen for storage events (when localStorage changes)
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'hotwheels_cars') {
+                this.refreshData();
+            }
+        });
     }
 
     setupEventListeners() {
@@ -166,7 +180,7 @@ class CollectionView {
         }
         
         if (totalValueElement) {
-            totalValueElement.textContent = `$${stats.totalValue.toFixed(2)}`;
+            totalValueElement.textContent = window.dataManager.formatCurrency(stats.totalValue);
         }
     }
 
@@ -244,7 +258,7 @@ class CollectionView {
                         </div>
                         <div class="car-detail">
                             <span class="car-detail-label">Price:</span>
-                            <span class="car-detail-value car-price">$${parseFloat(car.purchasePrice).toFixed(2)}</span>
+                            <span class="car-detail-value car-price">${window.dataManager.formatCurrency(car.purchasePrice)}</span>
                         </div>
                     </div>
                 </div>
@@ -267,7 +281,7 @@ class CollectionView {
                 <td>${car.series}</td>
                 <td>${car.color}</td>
                 <td>${car.condition}</td>
-                <td>$${parseFloat(car.purchasePrice).toFixed(2)}</td>
+                <td>${window.dataManager.formatCurrency(car.purchasePrice)}</td>
                 <td>${new Date(car.purchaseDate).toLocaleDateString()}</td>
             </tr>
         `).join('');
@@ -342,6 +356,18 @@ class CollectionView {
         } else {
             window.dataManager.exportToJSON();
         }
+    }
+
+    async refreshData() {
+        // Reload cars from localStorage (which has the latest data)
+        await window.dataManager.loadCars();
+        
+        // Refresh all displays
+        this.populateFilters();
+        this.updateStatistics();
+        this.displayCars();
+        
+        console.log('Data refreshed - found', window.dataManager.cars.length, 'cars');
     }
 }
 

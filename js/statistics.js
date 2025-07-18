@@ -36,8 +36,8 @@ class StatisticsView {
 
         // Update overview stats
         document.getElementById('totalCars').textContent = stats.totalCars;
-        document.getElementById('totalValue').textContent = `$${stats.totalValue.toFixed(2)}`;
-        document.getElementById('averagePrice').textContent = `$${stats.averagePrice.toFixed(2)}`;
+        document.getElementById('totalValue').textContent = window.dataManager.formatCurrency(stats.totalValue);
+        document.getElementById('averagePrice').textContent = window.dataManager.formatCurrency(stats.averagePrice);
         document.getElementById('wishlistCount').textContent = wishlist.length;
 
         // Update price analysis
@@ -62,11 +62,11 @@ class StatisticsView {
         const leastExpensiveCar = cars.find(car => parseFloat(car.purchasePrice) === minPrice);
 
         document.getElementById('mostExpensive').textContent = 
-            `${mostExpensiveCar.name} - $${maxPrice.toFixed(2)}`;
+            `${mostExpensiveCar.name} - ${window.dataManager.formatCurrency(maxPrice)}`;
         document.getElementById('leastExpensive').textContent = 
-            `${leastExpensiveCar.name} - $${minPrice.toFixed(2)}`;
+            `${leastExpensiveCar.name} - ${window.dataManager.formatCurrency(minPrice)}`;
         document.getElementById('priceRange').textContent = 
-            `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
+            `${window.dataManager.formatCurrency(minPrice)} - ${window.dataManager.formatCurrency(maxPrice)}`;
     }
 
     createCharts() {

@@ -274,15 +274,21 @@ class AdminPanel {
         try {
             if (this.editingCarId) {
                 window.dataManager.updateCar(this.editingCarId, formData);
-                this.showMessage('Car updated successfully!', 'success');
+                this.showMessage('Car updated successfully! Data saved to browser storage.', 'success');
                 this.editingCarId = null;
             } else {
                 window.dataManager.addCar(formData);
-                this.showMessage('Car added successfully!', 'success');
+                this.showMessage('Car added successfully! Data saved to browser storage.', 'success');
             }
             
             this.resetCarForm();
             this.loadManageCars();
+            
+            // Trigger a custom event to notify other pages that data has changed
+            window.dispatchEvent(new CustomEvent('dataUpdated', { 
+                detail: { type: 'cars' } 
+            }));
+            
         } catch (error) {
             this.showMessage('Error saving car: ' + error.message, 'error');
         }
@@ -362,7 +368,7 @@ class AdminPanel {
                 <div class="manage-item-info">
                     <div class="manage-item-name">${car.name}</div>
                     <div class="manage-item-details">
-                        ${car.brand} • ${car.series} • ${car.color} • $${parseFloat(car.purchasePrice).toFixed(2)}
+                        ${car.brand} • ${car.series} • ${car.color} • ${window.dataManager.formatCurrency(car.purchasePrice)}
                     </div>
                 </div>
                 <div class="manage-item-actions">
