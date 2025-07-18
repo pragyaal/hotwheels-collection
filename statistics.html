@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics - Hot Wheels Collection</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <i class="fas fa-car"></i>
+                    Hot Wheels Collection
+                </a>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">Collection</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="statistics.html" class="nav-link active">Statistics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="wishlist.html" class="nav-link">Wishlist</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="admin.html" class="nav-link admin-link">
+                            <i class="fas fa-lock"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="header-section">
+                <h1 class="page-title">Collection Statistics</h1>
+                <p>Insights into your Hot Wheels collection</p>
+            </div>
+
+            <div class="stats-container">
+                <!-- Overview Stats -->
+                <div class="overview-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-car"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="totalCars">0</span>
+                            <span class="stat-label">Total Cars</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="totalValue">$0</span>
+                            <span class="stat-label">Total Investment</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="averagePrice">$0</span>
+                            <span class="stat-label">Average Price</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-heart"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="wishlistCount">0</span>
+                            <span class="stat-label">Wishlist Items</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Cars by Brand</h3>
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Cars by Series</h3>
+                        <canvas id="seriesChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Cars by Color</h3>
+                        <canvas id="colorChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Cars by Condition</h3>
+                        <canvas id="conditionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Stats Tables -->
+                <div class="detailed-stats">
+                    <div class="stats-table">
+                        <h3>Brand Breakdown</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Brand</th>
+                                    <th>Count</th>
+                                    <th>Total Value</th>
+                                    <th>Average Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="brandStatsTable"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="stats-table">
+                        <h3>Series Breakdown</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Series</th>
+                                    <th>Count</th>
+                                    <th>Total Value</th>
+                                    <th>Average Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="seriesStatsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-section">
+                    <h3>Collection Timeline</h3>
+                    <div id="timelineChart" class="timeline-chart">
+                        <canvas id="acquisitionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Price Analysis -->
+                <div class="price-analysis">
+                    <h3>Price Analysis</h3>
+                    <div class="price-stats-grid">
+                        <div class="price-stat">
+                            <span class="price-label">Most Expensive</span>
+                            <span class="price-value" id="mostExpensive">-</span>
+                        </div>
+                        <div class="price-stat">
+                            <span class="price-label">Least Expensive</span>
+                            <span class="price-value" id="leastExpensive">-</span>
+                        </div>
+                        <div class="price-stat">
+                            <span class="price-label">Price Range</span>
+                            <span class="price-value" id="priceRange">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Hot Wheels Collection. Personal Inventory System.</p>
+        </div>
+    </footer>
+
+    <script src="js/data-manager.js"></script>
+    <script src="js/statistics.js"></script>
+</body>
+</html>

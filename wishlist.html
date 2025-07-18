@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - Hot Wheels Collection</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <i class="fas fa-car"></i>
+                    Hot Wheels Collection
+                </a>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">Collection</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="statistics.html" class="nav-link">Statistics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="wishlist.html" class="nav-link active">Wishlist</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="admin.html" class="nav-link admin-link">
+                            <i class="fas fa-lock"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="header-section">
+                <h1 class="page-title">My Wishlist</h1>
+                <p>Cars I want to add to my collection</p>
+                <div class="wishlist-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-heart"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="wishlistCount">0</span>
+                            <span class="stat-label">Items</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div class="stat-info">
+                            <span class="stat-number" id="expectedCost">$0</span>
+                            <span class="stat-label">Expected Cost</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="search-filters">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="wishlistSearch" placeholder="Search wishlist...">
+                    </div>
+                </div>
+                <div class="view-controls">
+                    <div class="sort-group">
+                        <label for="wishlistSort">Sort by:</label>
+                        <select id="wishlistSort">
+                            <option value="name">Name</option>
+                            <option value="brand">Brand</option>
+                            <option value="expectedPrice">Expected Price</option>
+                            <option value="dateAdded">Date Added</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wishlist-container">
+                <div id="wishlistGrid" class="wishlist-grid"></div>
+                
+                <div id="noWishlistItems" class="no-results" style="display: none;">
+                    <i class="fas fa-heart"></i>
+                    <h3>Your wishlist is empty</h3>
+                    <p>Add items from the admin panel to start building your wishlist</p>
+                    <a href="admin.html" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        Add Items
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Hot Wheels Collection. Personal Inventory System.</p>
+        </div>
+    </footer>
+
+    <script src="js/data-manager.js"></script>
+    <script src="js/wishlist.js"></script>
+</body>
+</html>

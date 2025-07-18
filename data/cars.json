@@ -1,0 +1,50 @@
+{
+  "cars": [
+    {
+      "id": 1,
+      "name": "Lamborghini Huracán",
+      "brand": "Hot Wheels",
+      "series": "Exotics",
+      "year": "2023",
+      "color": "Orange",
+      "scale": "1:64",
+      "condition": "Mint",
+      "purchasePrice": 1.97,
+      "purchaseDate": "2023-06-15",
+      "description": "Beautiful orange Lamborghini from the Exotics series. Perfect condition with original packaging.",
+      "image": "images/cars/lambo-huracan.jpg",
+      "dateAdded": "2025-01-18T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Porsche 911 GT3",
+      "brand": "Hot Wheels",
+      "series": "Car Culture",
+      "year": "2023",
+      "color": "White",
+      "scale": "1:64",
+      "condition": "Mint",
+      "purchasePrice": 5.99,
+      "purchaseDate": "2023-07-20",
+      "description": "White Porsche 911 GT3 from Car Culture series. Premium casting with detailed interior.",
+      "image": "images/cars/porsche-911.jpg",
+      "dateAdded": "2025-01-18T10:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Ferrari F40",
+      "brand": "Hot Wheels",
+      "series": "Mainline",
+      "year": "2023",
+      "color": "Red",
+      "scale": "1:64",
+      "condition": "Mint",
+      "purchasePrice": 1.25,
+      "purchaseDate": "2023-08-10",
+      "description": "Classic red Ferrari F40. One of the most iconic supercars in miniature form.",
+      "image": "images/cars/ferrari-f40.jpg",
+      "dateAdded": "2025-01-18T11:00:00.000Z"
+    }
+  ],
+  "lastUpdated": "2025-01-18T12:00:00.000Z"
+}

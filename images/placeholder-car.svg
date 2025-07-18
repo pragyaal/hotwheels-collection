@@ -1,0 +1,33 @@
+<!-- Placeholder for car images -->
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <rect width="400" height="300" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- Car shape -->
+  <rect x="50" y="120" width="300" height="100" rx="20" fill="#667eea" opacity="0.8"/>
+  
+  <!-- Wheels -->
+  <circle cx="120" cy="240" r="25" fill="#333"/>
+  <circle cx="120" cy="240" r="15" fill="#666"/>
+  <circle cx="280" cy="240" r="25" fill="#333"/>
+  <circle cx="280" cy="240" r="15" fill="#666"/>
+  
+  <!-- Windows -->
+  <rect x="100" y="90" width="200" height="50" rx="10" fill="#87ceeb" opacity="0.6"/>
+  
+  <!-- Icon -->
+  <circle cx="200" cy="60" r="20" fill="#667eea" opacity="0.3"/>
+  <text x="200" y="68" font-family="Arial" font-size="24" fill="#667eea" text-anchor="middle">🚗</text>
+  
+  <!-- Text -->
+  <text x="200" y="270" font-family="Arial" font-size="16" fill="#666" text-anchor="middle" font-weight="500">Hot Wheels Collection</text>
+  <text x="200" y="290" font-family="Arial" font-size="12" fill="#999" text-anchor="middle">Upload car photo in admin panel</text>
+</svg>

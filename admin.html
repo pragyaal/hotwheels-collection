@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Hot Wheels Collection</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <i class="fas fa-car"></i>
+                    Hot Wheels Collection
+                </a>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">Collection</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="statistics.html" class="nav-link">Statistics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="wishlist.html" class="nav-link">Wishlist</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="admin.html" class="nav-link admin-link active">
+                            <i class="fas fa-lock"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Login Form -->
+            <div id="loginSection" class="login-section">
+                <div class="login-container">
+                    <div class="login-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>Admin Access</h2>
+                        <p>Enter password to access admin panel</p>
+                    </div>
+                    <form id="loginForm" class="login-form">
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Login
+                        </button>
+                    </form>
+                    <div id="loginError" class="error-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPanel" class="admin-panel" style="display: none;">
+                <div class="admin-header">
+                    <h1 class="page-title">Admin Panel</h1>
+                    <button id="logoutBtn" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="addCar">
+                        <i class="fas fa-plus"></i>
+                        Add Car
+                    </button>
+                    <button class="tab-btn" data-tab="manageCars">
+                        <i class="fas fa-edit"></i>
+                        Manage Cars
+                    </button>
+                    <button class="tab-btn" data-tab="addWishlist">
+                        <i class="fas fa-heart"></i>
+                        Add to Wishlist
+                    </button>
+                    <button class="tab-btn" data-tab="manageWishlist">
+                        <i class="fas fa-list"></i>
+                        Manage Wishlist
+                    </button>
+                    <button class="tab-btn" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </button>
+                </div>
+
+                <!-- Add Car Tab -->
+                <div id="addCar" class="tab-content active">
+                    <h2>Add New Car</h2>
+                    <form id="addCarForm" class="admin-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="carName">Car Name *</label>
+                                <input type="text" id="carName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="carBrand">Brand *</label>
+                                <input type="text" id="carBrand" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="carSeries">Series</label>
+                                <input type="text" id="carSeries">
+                            </div>
+                            <div class="form-group">
+                                <label for="carYear">Year</label>
+                                <input type="text" id="carYear">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="carColor">Color</label>
+                                <input type="text" id="carColor">
+                            </div>
+                            <div class="form-group">
+                                <label for="carScale">Scale</label>
+                                <select id="carScale">
+                                    <option value="1:64">1:64</option>
+                                    <option value="1:43">1:43</option>
+                                    <option value="1:32">1:32</option>
+                                    <option value="1:24">1:24</option>
+                                    <option value="1:18">1:18</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="carCondition">Condition</label>
+                                <select id="carCondition">
+                                    <option value="Mint">Mint</option>
+                                    <option value="Near Mint">Near Mint</option>
+                                    <option value="Good">Good</option>
+                                    <option value="Fair">Fair</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="carPrice">Purchase Price ($)</label>
+                                <input type="number" id="carPrice" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="carPurchaseDate">Purchase Date</label>
+                            <input type="date" id="carPurchaseDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="carImage">Car Image</label>
+                            <input type="file" id="carImage" accept="image/*">
+                            <div id="imagePreview" class="image-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="carDescription">Description</label>
+                            <textarea id="carDescription" rows="4"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus"></i>
+                            Add Car
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Manage Cars Tab -->
+                <div id="manageCars" class="tab-content">
+                    <h2>Manage Cars</h2>
+                    <div class="search-section">
+                        <input type="text" id="manageSearch" placeholder="Search cars...">
+                    </div>
+                    <div id="manageCarsList" class="manage-list"></div>
+                </div>
+
+                <!-- Add to Wishlist Tab -->
+                <div id="addWishlist" class="tab-content">
+                    <h2>Add to Wishlist</h2>
+                    <form id="addWishlistForm" class="admin-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="wishlistName">Car Name *</label>
+                                <input type="text" id="wishlistName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="wishlistBrand">Brand</label>
+                                <input type="text" id="wishlistBrand">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="wishlistSeries">Series</label>
+                                <input type="text" id="wishlistSeries">
+                            </div>
+                            <div class="form-group">
+                                <label for="wishlistPrice">Expected Price ($)</label>
+                                <input type="number" id="wishlistPrice" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wishlistNotes">Notes</label>
+                            <textarea id="wishlistNotes" rows="3"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-heart"></i>
+                            Add to Wishlist
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Manage Wishlist Tab -->
+                <div id="manageWishlist" class="tab-content">
+                    <h2>Manage Wishlist</h2>
+                    <div id="wishlistItems" class="manage-list"></div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content">
+                    <h2>Settings</h2>
+                    <form id="settingsForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="siteName">Site Name</label>
+                            <input type="text" id="siteName">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">Change Password</label>
+                            <input type="password" id="newPassword" placeholder="Enter new password">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="currency">Currency</label>
+                            <select id="currency">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="CAD">CAD ($)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save Settings
+                        </button>
+                    </form>
+
+                    <div class="backup-section">
+                        <h3>Data Management</h3>
+                        <div class="backup-buttons">
+                            <button id="exportData" class="btn btn-primary">
+                                <i class="fas fa-download"></i>
+                                Export All Data
+                            </button>
+                            <button id="importData" class="btn btn-primary">
+                                <i class="fas fa-upload"></i>
+                                Import Data
+                            </button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="messageContent"></div>
+        </div>
+    </div>
+
+    <script src="js/data-manager.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
