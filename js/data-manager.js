@@ -14,15 +14,17 @@ class DataManager {
         // Check if Git storage is configured
         if (window.gitStorage) {
             const gitConfigured = window.gitStorage.loadConfig();
-            if (gitConfigured) {
+            if (gitConfigured && window.gitStorage.isConfigured) {
                 this.useGitStorage = true;
                 console.log('Using Git storage for data persistence');
             } else {
-                console.log('Git storage not configured, using localStorage');
+                console.log('Git storage not configured or not ready, using localStorage');
             }
         } else {
             console.log('Git storage not available');
         }
+        
+        console.log('DataManager: useGitStorage =', this.useGitStorage, 'gitStorage.isConfigured =', window.gitStorage?.isConfigured);
         
         await this.loadConfig();
         await this.loadCars();
@@ -90,19 +92,26 @@ class DataManager {
     // Car data management
     async loadCars() {
         try {
+            console.log('loadCars: Starting, useGitStorage =', this.useGitStorage);
+            
             // Try Git storage first if configured
             if (this.useGitStorage) {
                 try {
+                    console.log('loadCars: Attempting to load from Git storage...');
                     const gitCars = await window.gitStorage.loadCars();
+                    console.log('loadCars: Git storage returned:', gitCars);
                     this.cars = gitCars || [];
                     console.log('Loaded cars from Git storage:', this.cars.length);
                     return;
                 } catch (error) {
-                    console.log('Failed to load cars from Git, falling back to local');
+                    console.log('Failed to load cars from Git, falling back to local. Error:', error);
                 }
+            } else {
+                console.log('loadCars: Git storage not active, skipping');
             }
 
             // Fallback to localStorage
+            console.log('loadCars: Attempting localStorage...');
             const localData = localStorage.getItem('hotwheels_cars');
             if (localData) {
                 try {
@@ -112,11 +121,14 @@ class DataManager {
                     console.log('Loaded cars from localStorage:', this.cars.length);
                     return;
                 } catch (error) {
-                    console.log('Error parsing localStorage data');
+                    console.log('Error parsing localStorage data:', error);
                 }
+            } else {
+                console.log('loadCars: No localStorage data found');
             }
 
             // Final fallback to local file
+            console.log('loadCars: Attempting local file...');
             try {
                 const response = await fetch('data/cars.json');
                 if (response.ok) {
@@ -126,13 +138,14 @@ class DataManager {
                     return;
                 }
             } catch (error) {
-                console.log('No cars.json file found');
+                console.log('No cars.json file found or error loading:', error);
             }
 
             // If all else fails, start with empty array
+            console.log('loadCars: All sources failed, starting with empty array');
             this.cars = [];
         } catch (error) {
-            console.log('Error loading cars data');
+            console.log('Error loading cars data:', error);
             this.cars = [];
         }
     }

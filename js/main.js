@@ -23,6 +23,15 @@ class CollectionView {
         console.log('Git storage active:', window.dataManager.isGitStorageActive());
         console.log('Cars data:', window.dataManager.cars);
 
+        // Show debug info
+        this.updateDebugInfo();
+
+        // Force a fresh data load if we have no cars but Git storage is active
+        if (window.dataManager.cars.length === 0 && window.dataManager.isGitStorageActive()) {
+            console.log('No cars found but Git storage is active, forcing reload...');
+            await this.forceDataReload();
+        }
+
         this.setupEventListeners();
         this.populateFilters();
         this.updateStatistics();
@@ -115,6 +124,15 @@ class CollectionView {
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
                 this.showExportOptions();
+            });
+        }
+
+        // Refresh functionality
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                console.log('Manual refresh requested');
+                await this.forceDataReload();
             });
         }
 
@@ -220,6 +238,21 @@ class CollectionView {
 
         if (sortedCars.length === 0) {
             if (noResults) {
+                // Check if this is due to filters or genuinely empty collection
+                const allCars = window.dataManager.getCars();
+                if (allCars.length === 0) {
+                    noResults.innerHTML = `
+                        <i class="fas fa-car"></i>
+                        <h3>No cars in collection yet</h3>
+                        <p>Start building your collection by adding cars in the <a href="admin.html">Admin Panel</a></p>
+                    `;
+                } else {
+                    noResults.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No cars found</h3>
+                        <p>Try adjusting your search or filters</p>
+                    `;
+                }
                 noResults.style.display = 'block';
             }
             if (gridContainer) gridContainer.innerHTML = '';
@@ -377,8 +410,95 @@ class CollectionView {
         this.populateFilters();
         this.updateStatistics();
         this.displayCars();
+        this.updateDebugInfo();
         
         console.log('Data refreshed - found', window.dataManager.cars.length, 'cars');
+    }
+
+    async forceDataReload() {
+        try {
+            console.log('Forcing data reload from Git storage...');
+            if (window.dataManager && window.dataManager.isGitStorageActive()) {
+                // Force reload from Git storage
+                await window.dataManager.loadCars();
+                await window.dataManager.loadWishlist();
+                console.log('Forced reload complete. Cars:', window.dataManager.cars.length);
+                
+                // Refresh the display
+                this.populateFilters();
+                this.updateStatistics();
+                this.displayCars();
+                this.updateDebugInfo();
+            }
+        } catch (error) {
+            console.error('Error forcing data reload:', error);
+        }
+    }
+
+    updateDebugInfo() {
+        const debugInfo = document.getElementById('debugInfo');
+        const debugText = document.getElementById('debugText');
+        
+        if (debugText && window.dataManager) {
+            const info = `
+                Cars loaded: ${window.dataManager.cars.length}<br>
+                Git storage active: ${window.dataManager.isGitStorageActive()}<br>
+                Storage configured: ${window.gitStorage ? window.gitStorage.isConfigured : 'No gitStorage'}<br>
+                Data manager initialized: ${window.dataManager.initialized}<br>
+                Current timestamp: ${new Date().toLocaleTimeString()}
+            `;
+            debugText.innerHTML = info;
+            
+            // Show debug info if no cars are found OR always show for now
+            if (debugInfo) {
+                debugInfo.style.display = 'block'; // Always show for debugging
+            }
+        }
+    }
+
+    // Add test data for debugging
+    addTestData() {
+        const testCars = [
+            {
+                id: 1,
+                name: "Test Car 1",
+                brand: "Hot Wheels",
+                series: "Fast & Furious",
+                year: "2023",
+                color: "Red",
+                scale: "1:64",
+                condition: "Mint",
+                purchasePrice: 5.99,
+                purchaseDate: "2024-01-15",
+                description: "Test car for debugging",
+                image: "images/placeholder-car.svg"
+            },
+            {
+                id: 2,
+                name: "Test Car 2",
+                brand: "Matchbox",
+                series: "City Series",
+                year: "2024",
+                color: "Blue",
+                scale: "1:64",
+                condition: "Near Mint",
+                purchasePrice: 4.99,
+                purchaseDate: "2024-02-10",
+                description: "Another test car",
+                image: "images/placeholder-car.svg"
+            }
+        ];
+        
+        // Add test cars to data manager
+        window.dataManager.cars = testCars;
+        
+        // Refresh display
+        this.populateFilters();
+        this.updateStatistics();
+        this.displayCars();
+        this.updateDebugInfo();
+        
+        console.log('Test data added:', testCars);
     }
 }
 

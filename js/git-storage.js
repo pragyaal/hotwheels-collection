@@ -187,12 +187,19 @@ class GitStorageManager {
     // Load cars from Git repository
     async loadCars() {
         try {
+            console.log('gitStorage.loadCars: Starting...');
             const result = await this.getFile('data/cars.json');
+            console.log('gitStorage.loadCars: getFile result:', result);
+            
             if (result.content && result.content.cars) {
+                console.log('gitStorage.loadCars: Found cars array:', result.content.cars.length);
                 return result.content.cars;
             } else if (result.content && Array.isArray(result.content)) {
+                console.log('gitStorage.loadCars: Found direct array:', result.content.length);
                 return result.content;
             }
+            
+            console.log('gitStorage.loadCars: No valid data found, returning empty array');
             return [];
         } catch (error) {
             console.error('Failed to load cars from Git:', error);
