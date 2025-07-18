@@ -147,13 +147,13 @@ class GitStorageManager {
     async getFile(path) {
         try {
             const result = await this.githubAPI(`contents/${path}`);
-            const content = atob(result.content);
+            const content = atob(result.content.replace(/\s/g, ''));
             return {
                 content: JSON.parse(content),
                 sha: result.sha
             };
         } catch (error) {
-            if (error.message.includes('404')) {
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
                 return { content: null, sha: null };
             }
             throw error;
@@ -209,7 +209,7 @@ class GitStorageManager {
             return true;
         } catch (error) {
             console.error('Failed to save cars to Git:', error);
-            return false;
+            throw error;
         }
     }
 
@@ -248,7 +248,7 @@ class GitStorageManager {
             return true;
         } catch (error) {
             console.error('Failed to save wishlist to Git:', error);
-            return false;
+            throw error;
         }
     }
 
@@ -278,7 +278,7 @@ class GitStorageManager {
             return true;
         } catch (error) {
             console.error('Failed to save config to Git:', error);
-            return false;
+            throw error;
         }
     }
 

@@ -7,8 +7,13 @@ class StatisticsView {
 
     async init() {
         // Wait for data manager to load
-        while (!window.dataManager || !window.dataManager.cars) {
+        while (!window.dataManager) {
             await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        // Wait for data manager to finish initializing
+        if (window.dataManager.initPromise) {
+            await window.dataManager.initPromise;
         }
 
         this.setupEventListeners();

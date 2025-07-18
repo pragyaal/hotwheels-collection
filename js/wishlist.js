@@ -12,6 +12,11 @@ class WishlistView {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
 
+        // Wait for data manager to finish initializing
+        if (window.dataManager.initPromise) {
+            await window.dataManager.initPromise;
+        }
+
         this.setupEventListeners();
         this.updateStatistics();
         this.displayWishlist();

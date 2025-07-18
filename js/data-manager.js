@@ -73,9 +73,7 @@ class DataManager {
             if (response.ok) {
                 this.config = await response.json();
             } else {
-                // Default config if file doesn't exist
                 this.config = {
-                    adminPassword: this.encrypt('hotwheels123'), // Default password: hotwheels123
                     siteName: 'Hot Wheels Collection',
                     currency: 'INR'
                 };
@@ -83,7 +81,6 @@ class DataManager {
         } catch (error) {
             console.log('Config file not found, using defaults');
             this.config = {
-                adminPassword: this.encrypt('hotwheels123'),
                 siteName: 'Hot Wheels Collection',
                 currency: 'INR'
             };
@@ -105,7 +102,7 @@ class DataManager {
                 }
             }
 
-            // Fallback to localStorage only if Git storage is not configured
+            // Fallback to localStorage
             const localData = localStorage.getItem('hotwheels_cars');
             if (localData) {
                 try {
@@ -154,7 +151,7 @@ class DataManager {
                 }
             }
 
-            // Fallback to localStorage only if Git storage is not configured
+            // Fallback to localStorage
             const localData = localStorage.getItem('hotwheels_wishlist');
             if (localData) {
                 try {
@@ -428,20 +425,23 @@ class DataManager {
     // Data persistence
     async saveCars() {
         console.log('saveCars called, useGitStorage:', this.useGitStorage);
-        // If Git storage is configured, save there only
+        // If Git storage is configured, save there primarily
         if (this.useGitStorage) {
             try {
                 console.log('Attempting to save cars to Git repository...');
-                const success = await window.gitStorage.saveCars(this.cars);
-                if (success) {
-                    console.log('Cars saved to Git repository');
-                    return;
-                } else {
-                    throw new Error('Git save failed');
-                }
+                await window.gitStorage.saveCars(this.cars);
+                console.log('Cars saved to Git repository');
+                
+                // Also save to localStorage as backup
+                const data = {
+                    cars: this.cars,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('hotwheels_cars', JSON.stringify(data));
+                return;
             } catch (error) {
                 console.error('Failed to save cars to Git storage:', error);
-                throw error; // Don't fall back, show error
+                throw error;
             }
         }
         
@@ -459,20 +459,23 @@ class DataManager {
 
     async saveWishlist() {
         console.log('saveWishlist called, useGitStorage:', this.useGitStorage);
-        // If Git storage is configured, save there only
+        // If Git storage is configured, save there primarily
         if (this.useGitStorage) {
             try {
                 console.log('Attempting to save wishlist to Git repository...');
-                const success = await window.gitStorage.saveWishlist(this.wishlist);
-                if (success) {
-                    console.log('Wishlist saved to Git repository');
-                    return;
-                } else {
-                    throw new Error('Git save failed');
-                }
+                await window.gitStorage.saveWishlist(this.wishlist);
+                console.log('Wishlist saved to Git repository');
+                
+                // Also save to localStorage as backup
+                const data = {
+                    wishlist: this.wishlist,
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('hotwheels_wishlist', JSON.stringify(data));
+                return;
             } catch (error) {
                 console.error('Failed to save wishlist to Git storage:', error);
-                throw error; // Don't fall back, show error
+                throw error;
             }
         }
         
@@ -488,19 +491,18 @@ class DataManager {
     }
 
     async saveConfig() {
-        // If Git storage is configured, save there only
+        // If Git storage is configured, save there primarily
         if (this.useGitStorage) {
             try {
-                const success = await window.gitStorage.saveConfig(this.config);
-                if (success) {
-                    console.log('Config saved to Git repository');
-                    return;
-                } else {
-                    throw new Error('Git save failed');
-                }
+                await window.gitStorage.saveConfig(this.config);
+                console.log('Config saved to Git repository');
+                
+                // Also save to localStorage as backup
+                localStorage.setItem('hotwheels_config', JSON.stringify(this.config));
+                return;
             } catch (error) {
                 console.error('Failed to save config to Git storage:', error);
-                throw error; // Don't fall back, show error
+                throw error;
             }
         }
         

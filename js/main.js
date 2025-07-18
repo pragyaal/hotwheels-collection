@@ -368,8 +368,10 @@ class CollectionView {
     }
 
     async refreshData() {
-        // Reload cars from localStorage (which has the latest data)
-        await window.dataManager.loadCars();
+        // Reload data from data manager
+        if (window.dataManager.initPromise) {
+            await window.dataManager.initPromise;
+        }
         
         // Refresh all displays
         this.populateFilters();
