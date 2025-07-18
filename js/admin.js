@@ -19,8 +19,19 @@ class AdminPanel {
 
     updateStorageStatusDisplay() {
         const statusElement = document.getElementById('storageStatusText');
+        const gitPrompt = document.getElementById('gitStoragePrompt');
+        
         if (statusElement && window.dataManager) {
             statusElement.textContent = window.dataManager.getStorageStatusMessage();
+            
+            // Show/hide Git storage prompt
+            if (gitPrompt) {
+                if (window.dataManager.isGitStorageActive()) {
+                    gitPrompt.style.display = 'none';
+                } else {
+                    gitPrompt.style.display = 'block';
+                }
+            }
             
             // Update icon based on storage type
             const panel = document.getElementById('storageInfoPanel');
@@ -29,8 +40,8 @@ class AdminPanel {
                     panel.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
                     panel.querySelector('i').className = 'fas fa-cloud-check';
                 } else {
-                    panel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    panel.querySelector('i').className = 'fas fa-info-circle';
+                    panel.style.background = 'linear-gradient(135deg, #ffc107 0%, #fd7e14 100%)';
+                    panel.querySelector('i').className = 'fas fa-exclamation-triangle';
                 }
             }
         }

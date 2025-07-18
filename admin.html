@@ -109,6 +109,9 @@
                         <i class="fas fa-info-circle"></i>
                         <div id="storageStatusMessage">
                             <strong>Data Storage:</strong> <span id="storageStatusText">Loading...</span>
+                            <div id="gitStoragePrompt" style="margin-top: 0.5rem; display: none;">
+                                <small>⚠️ <a href="#" onclick="adminPanel.switchToSettingsTab()" style="color: #fff; text-decoration: underline;">Configure Git storage in Settings</a> for permanent data backup and image storage.</small>
+                            </div>
                         </div>
                     </div>
                     
@@ -285,25 +288,32 @@
 
                         <div class="form-section">
                             <h4>🔗 Git Storage Configuration</h4>
+                            <div class="info-panel" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); margin-bottom: 1rem;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Required for Permanent Storage!</strong> 
+                                Without Git storage, your data is only saved locally in your browser and will be lost if you clear browser data.
+                            </div>
                             <p class="form-description">
                                 Configure Git repository for permanent data storage. This requires a private GitHub repository and personal access token.
-                                <a href="#" onclick="adminPanel.showGitStorageHelp()" style="color: #667eea;">Learn more</a>
+                                <a href="IMAGE_SETUP_GUIDE.md" target="_blank" style="color: #667eea;">📖 Step-by-step setup guide</a>
                             </p>
                             
                             <div class="form-group">
                                 <label for="gitRepoOwner">Repository Owner</label>
-                                <input type="text" id="gitRepoOwner" placeholder="your-username">
+                                <input type="text" id="gitRepoOwner" placeholder="your-github-username">
+                                <small>Your GitHub username (e.g., if your profile is github.com/johndoe, enter "johndoe")</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="gitRepoName">Repository Name</label>
-                                <input type="text" id="gitRepoName" placeholder="hotwheels-data">
+                                <input type="text" id="gitRepoName" placeholder="hotwheels-collection-data">
+                                <small>Name of your private repository (create one at github.com/new)</small>
                             </div>
                             
                             <div class="form-group">
                                 <label for="gitAccessToken">GitHub Personal Access Token</label>
                                 <input type="password" id="gitAccessToken" placeholder="ghp_xxxxxxxxxxxx">
-                                <small>Needs 'repo' permissions for private repositories</small>
+                                <small>Generate at GitHub → Settings → Developer settings → Personal access tokens. Needs 'repo' permission.</small>
                             </div>
                             
                             <div class="form-actions">
